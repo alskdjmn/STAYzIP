@@ -38,6 +38,43 @@ export default function App() {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [conversationHistory, setConversationHistory] = useState<ChatMessage[]>([]);
 
+  // 1. 대화 기록 로드 및 24시간 만료 처리
+  useEffect(() => {
+    if (user) {
+      const saved = localStorage.getItem(`chat_history_${user.uid}`);
+      if (saved) {
+        try {
+          const { timestamp, history } = JSON.parse(saved);
+          // 24시간(86400000ms)이 지나지 않았으면 로드, 지났으면 삭제
+          if (Date.now() - timestamp < 24 * 60 * 60 * 1000) {
+            setConversationHistory(history);
+          } else {
+            localStorage.removeItem(`chat_history_${user.uid}`);
+            setConversationHistory([]);
+          }
+        } catch (e) {
+          setConversationHistory([]);
+        }
+      } else {
+        setConversationHistory([]);
+      }
+    } else {
+      setConversationHistory([]);
+    }
+  }, [user]);
+
+  // 2. 대화 기록 저장
+  useEffect(() => {
+    if (user && conversationHistory.length > 0) {
+      localStorage.setItem(`chat_history_${user.uid}`, JSON.stringify({
+        timestamp: Date.now(),
+        history: conversationHistory
+      }));
+    } else if (user && conversationHistory.length === 0) {
+      localStorage.removeItem(`chat_history_${user.uid}`);
+    }
+  }, [conversationHistory, user]);
+
   // Auth State Listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -184,7 +221,8 @@ export default function App() {
       timestamp: bookmark.timestamp
     };
     
-    setConversationHistory([userMessage, assistantMessage]);
+    // 최신 대화가 맨 위로 오도록 앞에 추가
+    setConversationHistory(prev => [userMessage, assistantMessage, ...prev]);
     setCurrentQuestion(bookmark.question);
     setCurrentAnswer(bookmark.answer);
     setActiveTab('result');
@@ -201,14 +239,16 @@ export default function App() {
       timestamp: new Date().toISOString()
     };
 
-    setConversationHistory(prev => [...prev, userMessage]);
+    // 최신 대화가 맨 위로 오도록 배열 맨 앞에 추가
+    setConversationHistory(prev => [userMessage, ...prev]);
     setCurrentQuestion(query || '사진으로 질문하기');
     setIsLoading(true);
     setActiveTab('result');
     window.scrollTo(0, 0);
 
     try {
-      const answer = await getAnswer(query, inventoryItems, conversationHistory, image);
+      // 배열이 역순(최신이 맨앞)이므로, API 전송 시에는 다시 정방향으로 뒤집어서(reverse) 맥락을 전달
+      const answer = await getAnswer(query, inventoryItems, [...conversationHistory].reverse(), image);
       
       const assistantMessage: ChatMessage = {
         role: 'assistant',
@@ -216,7 +256,12 @@ export default function App() {
         answer: answer,
         timestamp: new Date().toISOString()
       };
-      setConversationHistory(prev => [...prev, assistantMessage]);
+      // 방금 맨 앞에 추가된 userMessage 바로 다음(인덱스 1)에 답변을 삽입
+      setConversationHistory(prev => {
+        const newArr = [...prev];
+        newArr.splice(1, 0, assistantMessage);
+        return newArr;
+      });
       setCurrentAnswer(answer);
     } catch (error) {
       console.error("Search Error:", error);
@@ -238,7 +283,8 @@ export default function App() {
       answer: rule.answer,
       timestamp: new Date().toISOString()
     };
-    setConversationHistory([userMessage, assistantMessage]);
+    // 최신 대화가 맨 위로 오도록 앞에 추가
+    setConversationHistory(prev => [userMessage, assistantMessage, ...prev]);
     setCurrentQuestion(rule.question);
     setCurrentAnswer(rule.answer);
     setActiveTab('result');

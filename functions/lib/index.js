@@ -101,7 +101,9 @@ exports.generateAnswer = (0, https_1.onCall)({ cors: true, region: "asia-northea
                 },
             },
         });
-        return JSON.parse(response.text || "{}");
+        const text = response.text || "{}";
+        const cleanJson = text.replace(/```json\n?|```/g, "").trim();
+        return JSON.parse(cleanJson);
     }
     catch (error) {
         logger.error("Gemini API Error:", error);
