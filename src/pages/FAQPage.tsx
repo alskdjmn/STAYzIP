@@ -10,8 +10,8 @@ import { FAQAccordion } from '../components/FAQAccordion';
 export const FAQPage: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<string>('all');
 
-  const filteredFaqs = activeCategory === 'all' 
-    ? FAQ_ITEMS 
+  const filteredFaqs = activeCategory === 'all'
+    ? FAQ_ITEMS
     : FAQ_ITEMS.filter(item => item.category === activeCategory);
 
   return (
@@ -24,11 +24,10 @@ export const FAQPage: React.FC = () => {
       <div className="flex flex-wrap gap-2 justify-center">
         <button
           onClick={() => setActiveCategory('all')}
-          className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${
-            activeCategory === 'all' 
-              ? 'bg-blue-600 text-white shadow-lg' 
-              : 'bg-white text-gray-500 border border-gray-100 hover:bg-gray-50'
-          }`}
+          className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${activeCategory === 'all'
+            ? 'bg-blue-600 text-white shadow-lg'
+            : 'bg-white text-gray-500 border border-gray-100 hover:bg-gray-50'
+            }`}
         >
           전체
         </button>
@@ -36,11 +35,10 @@ export const FAQPage: React.FC = () => {
           <button
             key={cat.id}
             onClick={() => setActiveCategory(cat.id)}
-            className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${
-              activeCategory === cat.id 
-                ? 'bg-blue-600 text-white shadow-lg' 
-                : 'bg-white text-gray-500 border border-gray-100 hover:bg-gray-50'
-            }`}
+            className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${activeCategory === cat.id
+              ? 'bg-blue-600 text-white shadow-lg'
+              : 'bg-white text-gray-500 border border-gray-100 hover:bg-gray-50'
+              }`}
           >
             {cat.name}
           </button>

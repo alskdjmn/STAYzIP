@@ -152,13 +152,19 @@ export const ChatPage: React.FC<ChatPageProps> = ({ user, userProfile, onBack })
       {/* Input */}
       <div className="p-4 bg-white border-t border-gray-100 sticky bottom-0">
         <form onSubmit={handleSendMessage} className="flex items-center space-x-2 max-w-4xl mx-auto">
-          <input
-            type="text"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="메시지를 입력하세요..."
-            className="flex-1 bg-gray-50 border border-gray-200 rounded-full px-6 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
-          />
+          <div className="flex-1 relative">
+            <input
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder="메시지를 입력하세요..."
+              maxLength={23}
+              className="w-full bg-gray-50 border border-gray-200 rounded-full px-6 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all pr-14"
+            />
+            <span className={`absolute right-5 top-1/2 -translate-y-1/2 text-xs font-bold ${newMessage.length >= 23 ? 'text-red-400' : 'text-gray-400'}`}>
+              {newMessage.length}/23
+            </span>
+          </div>
           <button
             type="submit"
             disabled={!newMessage.trim() || isSending}
