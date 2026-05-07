@@ -1,0 +1,103 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isRoomMember(roomId) {
+      return isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/rooms/$(roomId)).data.members;
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email']) &&
+             data.uid is string &&
+             data.email is string;
+    }
+
+    function isValidInventoryItem(data) {
+      return data.keys().hasAll(['id', 'name', 'category', 'userId']) &&
+             data.id is string &&
+             data.name is string &&
+             data.name.size() > 0 &&
+             data.name.size() < 100 &&
+             data.category in ['냉장고', '청소용품', '기타'] &&
+             data.userId is string;
+    }
+
+    function isValidBookmark(data) {
+      return data.keys().hasAll(['id', 'userId', 'question', 'answer', 'timestamp']) &&
+             data.id is string &&
+             data.userId is string &&
+             data.question is string &&
+             data.answer is map &&
+             data.timestamp is string;
+    }
+
+    function isValidRoom(data) {
+      return data.keys().hasAll(['name', 'code', 'createdBy', 'members', 'createdAt']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 15 &&
+             data.code is string && data.code.size() == 6 &&
+             data.createdBy is string &&
+             data.members is list &&
+             data.createdAt is string;
+    }
+
+    function isValidMessage(data) {
+      return data.text is string && data.text.size() > 0 && data.text.size() <= 1000 &&
+             data.userId == request.auth.uid &&
+             data.userName is string &&
+             data.createdAt is string;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId) && isValidUser(request.resource.data);
+
+      match /inventory/{itemId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidInventoryItem(request.resource.data) && request.resource.data.userId == userId;
+        allow update: if isOwner(userId) && isValidInventoryItem(request.resource.data) && request.resource.data.userId == userId;
+        allow delete: if isOwner(userId);
+      }
+
+      match /bookmarks/{bookmarkId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidBookmark(request.resource.data) && request.resource.data.userId == userId;
+        allow update: if isOwner(userId) && isValidBookmark(request.resource.data) && request.resource.data.userId == userId;
+        allow delete: if isOwner(userId);
+      }
+    }
+
+    match /rooms/{roomId} {
+      // 누구나 방 코드를 통해 방 존재 여부는 확인 가능하도록 읽기 일부 허용 (where 쿼리 사용)
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidRoom(request.resource.data) && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isAuthenticated(); // 방 멤버 참여/나가기 로직용
+
+      match /inventory/{itemId} {
+        allow read, write: if isRoomMember(roomId);
+      }
+
+      match /messages/{messageId} {
+        allow read: if isRoomMember(roomId);
+        allow create: if isRoomMember(roomId) && isValidMessage(request.resource.data);
+        allow update, delete: if false; // 채팅 메시지는 수정/삭제 불가 (보안 및 조작 방지)
+      }
+    }
+  }
+}
