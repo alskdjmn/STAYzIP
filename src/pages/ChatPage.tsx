@@ -130,11 +130,12 @@ export const ChatPage: React.FC<ChatPageProps> = ({ user, userProfile, onBack })
                 <div className={`flex flex-col ${me ? 'items-end' : 'items-start'}`}>
                   {!me && <span className="text-xs text-gray-500 font-bold mb-1 ml-1">{msg.userName}</span>}
                   <div 
-                    className={`max-w-[75%] px-5 py-3 rounded-2xl shadow-sm text-sm ${
+                    className={`px-5 py-3 rounded-2xl shadow-sm text-sm break-words ${
                       me 
                         ? 'bg-blue-600 text-white rounded-br-sm' 
                         : 'bg-white border border-gray-100 text-gray-900 rounded-bl-sm'
                     }`}
+                    style={{ maxWidth: '360px', wordBreak: 'break-word' }}
                   >
                     {msg.text}
                   </div>
@@ -152,19 +153,13 @@ export const ChatPage: React.FC<ChatPageProps> = ({ user, userProfile, onBack })
       {/* Input */}
       <div className="p-4 bg-white border-t border-gray-100 sticky bottom-0">
         <form onSubmit={handleSendMessage} className="flex items-center space-x-2 max-w-4xl mx-auto">
-          <div className="flex-1 relative">
-            <input
-              type="text"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="메시지를 입력하세요..."
-              maxLength={23}
-              className="w-full bg-gray-50 border border-gray-200 rounded-full px-6 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all pr-14"
-            />
-            <span className={`absolute right-5 top-1/2 -translate-y-1/2 text-xs font-bold ${newMessage.length >= 23 ? 'text-red-400' : 'text-gray-400'}`}>
-              {newMessage.length}/23
-            </span>
-          </div>
+          <input
+            type="text"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            placeholder="메시지를 입력하세요..."
+            className="flex-1 bg-gray-50 border border-gray-200 rounded-full px-6 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+          />
           <button
             type="submit"
             disabled={!newMessage.trim() || isSending}
