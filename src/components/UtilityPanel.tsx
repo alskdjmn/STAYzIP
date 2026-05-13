@@ -1,8 +1,7 @@
 import React from 'react';
-import { X, Package, LayoutGrid, TrendingUp, LogOut, User as UserIcon, Bookmark as BookmarkIcon, ChevronRight } from 'lucide-react';
+import { X, Package, LayoutGrid, LogOut, User as UserIcon, Bookmark as BookmarkIcon, ChevronRight } from 'lucide-react';
 import { Inventory } from './Inventory';
 import { CategoryCard } from './CategoryCard';
-import { RecentQuestionsList } from './RecentQuestionsList';
 import { RoomManager } from './RoomManager';
 import { CATEGORIES, RULES } from '../data/mockData';
 import { InventoryItem, InventoryCategory, HomeAssistRule, Bookmark, UserProfile } from '../types';
@@ -202,22 +201,7 @@ export const UtilityPanel: React.FC<UtilityPanelProps> = ({
                 </div>
               </section>
 
-              {/* Popular Questions Section */}
-              <section className="pb-12">
-                <div className="flex items-center space-x-2 mb-6">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <TrendingUp className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <h3 className="text-xl font-black text-gray-900 tracking-tight">최근 인기 질문</h3>
-                </div>
-                <RecentQuestionsList
-                  questions={RULES.slice(0, 3)}
-                  onSelect={(rule) => {
-                    onSelectRule(rule);
-                    onClose();
-                  }}
-                />
-              </section>
+
             </div>
           </motion.div>
         </>

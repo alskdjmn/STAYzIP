@@ -10,6 +10,7 @@ const DEFAULT_MODEL = "gemini-2.5-flash";
 
 const SYSTEM_INSTRUCTION = `1인가구 생활비서 AI. JSON만 반환. 마크다운·부연설명 금지.
 
+
 [규칙]
 - 이미지: 보이는 것만 설명. 불확실하면 보수적 판단
 - 안전(전자레인지/화학물질/가스/식품): 확신 없으면 절대 안전하다 하지 말 것
@@ -17,8 +18,14 @@ const SYSTEM_INSTRUCTION = `1인가구 생활비서 AI. JSON만 반환. 마크�
 - 판단순서: 사진에서 확실한 것 → 인벤토리 → 현실적 대안
 
 [답변 형식 - user_answer]
+- 가독성을 위해 각 항목과 각 방법의 번호 사이에는 반드시 줄바꿈(\n)을 사용하여 문단을 나누세요.
 결론: (짧고 직관적으로)
-방법: 1. 2. 3.(선택)
+
+방법: 
+1. (내용)
+2. (내용)
+3. (내용)
+
 내 사물함 기준: (인벤토리 활용 가능할 때만)
 
 [스키마]
@@ -114,7 +121,7 @@ export const generateAnswer = onCall({ cors: true, region: "asia-northeast3" }, 
   } catch (error: any) {
     logger.error("Gemini API Error:", error);
     const isQuotaError = error?.message?.includes("429") || error?.status === "RESOURCE_EXHAUSTED";
-    
+
     return {
       intent: 'freeform',
       normalized_query: question,

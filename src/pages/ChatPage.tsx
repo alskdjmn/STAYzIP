@@ -78,7 +78,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ user, userProfile, onBack })
   if (!roomId) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <p className="text-gray-500 font-bold mb-4">참여 중인 방이 없습니다.</p>
+        <p className="text-gray-500 font-bold mb-4">대화할 사람이 없습니다.</p>
         <button onClick={onBack} className="px-6 py-2 bg-blue-600 text-white rounded-full font-bold">돌아가기</button>
       </div>
     );

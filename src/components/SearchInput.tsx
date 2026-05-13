@@ -64,7 +64,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({ onSearch, placeholder,
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="block w-full pl-10 pr-32 py-4 bg-white border border-gray-200 rounded-2xl shadow-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-lg placeholder:text-gray-400"
-            placeholder={placeholder || 'ㄱㄱ하시긔'}
+            placeholder={placeholder || '무엇이든 물어보세요...'}
           />
           <div className="absolute inset-y-0 right-0 flex items-center pr-2 space-x-1">
             <button

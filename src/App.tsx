@@ -7,8 +7,8 @@ import React, { useState, useEffect } from 'react';
 import { Layout } from './components/Layout';
 import { HomePage } from './pages/HomePage';
 import { CategoryPage } from './pages/CategoryPage';
-import { FAQPage } from './pages/FAQPage';
 import { MyPage } from './pages/MyPage';
+import { ZipPage } from './pages/ZipPage';
 import { ChatPage } from './pages/ChatPage';
 import { ResultCard } from './components/ResultCard';
 import { HomeAssistRule, HomeAssistAnswer, IntentType, InventoryItem, InventoryCategory, ChatMessage, Bookmark, UserProfile, Room } from './types';
@@ -23,7 +23,7 @@ import { LoginScreen } from './components/LoginScreen';
 import { SearchInput } from './components/SearchInput';
 import { motion, AnimatePresence } from 'motion/react';
 
-type Page = 'home' | 'category' | 'faq' | 'mypage' | 'result' | 'chat';
+type Page = 'home' | 'category' | 'zip' | 'mypage' | 'result' | 'chat';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -316,10 +316,23 @@ export default function App() {
         );
       case 'category':
         return <CategoryPage onSelectRule={handleSelectRule} />;
-      case 'faq':
-        return <FAQPage />;
+      case 'zip':
+        return userProfile && <ZipPage 
+          user={user} 
+          userProfile={userProfile} 
+          inventoryItems={inventoryItems} 
+          onAddInventoryItem={handleAddInventoryItem} 
+          onRemoveInventoryItem={handleRemoveInventoryItem} 
+          onOpenChat={() => handleNavigate('chat')} 
+        />;
       case 'mypage':
-        return <MyPage onSelectRule={handleSelectRule} />;
+        return userProfile && <MyPage 
+          user={user} 
+          userProfile={userProfile} 
+          bookmarks={bookmarks} 
+          onSelectBookmark={handleSelectBookmark} 
+          onLogout={() => { handleNavigate('home'); setUser(null); }} 
+        />;
       case 'chat':
         return userProfile && <ChatPage user={user} userProfile={userProfile} onBack={() => handleNavigate('home')} />;
       case 'result':

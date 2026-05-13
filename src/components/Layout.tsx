@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Home, Search, HelpCircle, User, Menu } from 'lucide-react';
+import { Home, Search, HelpCircle, User, Menu, FileText, MessageSquare } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -17,7 +17,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onNavigate,
   const navItems = [
     { id: 'home', label: '홈', icon: Home },
     { id: 'category', label: '카테고리', icon: Search },
-    { id: 'faq', label: 'FAQ', icon: HelpCircle },
+    { id: 'zip', label: 'ZIP', icon: FileText },
+    { id: 'chat', label: '채팅', icon: MessageSquare },
     { id: 'mypage', label: '마이페이지', icon: User },
   ];
 
@@ -36,7 +37,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onNavigate,
         </div>
         <button 
           onClick={onToggleUtility}
-          className="p-2 text-gray-500 hover:text-gray-900 transition-colors"
+          className="p-2 text-gray-500 hover:text-gray-900 transition-colors hidden md:block"
         >
           <Menu className="h-6 w-6" />
         </button>

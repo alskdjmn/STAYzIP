@@ -29,7 +29,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onSearch, onSelectCategory, 
             <span className="text-blue-600">한곳에 ZIP</span>
           </h1>
           <p className="text-gray-500 text-lg md:text-xl max-w-xl mx-auto mb-12 font-medium">
-            검색 ㄱㄱ
+            자취 맞춤형 AI, 무엇이든 물어보세요
           </p>
         </motion.div>
 
