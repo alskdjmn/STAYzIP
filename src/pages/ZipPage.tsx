@@ -16,7 +16,6 @@ interface ZipPageProps {
   inventoryItems: InventoryItem[];
   onAddInventoryItem: (name: string, category: InventoryCategory) => void;
   onRemoveInventoryItem: (id: string) => void;
-  onOpenChat: () => void;
 }
 
 export const ZipPage: React.FC<ZipPageProps> = ({
@@ -24,8 +23,7 @@ export const ZipPage: React.FC<ZipPageProps> = ({
   userProfile,
   inventoryItems,
   onAddInventoryItem,
-  onRemoveInventoryItem,
-  onOpenChat
+  onRemoveInventoryItem
 }) => {
   return (
     <div className="space-y-12">
@@ -40,7 +38,6 @@ export const ZipPage: React.FC<ZipPageProps> = ({
           <RoomManager 
             user={user} 
             userProfile={userProfile} 
-            onOpenChat={onOpenChat}
           />
         </section>
 

@@ -21,7 +21,6 @@ interface UtilityPanelProps {
   onSelectCategory: (id: string) => void;
   onSelectRule: (rule: HomeAssistRule) => void;
   onSelectBookmark: (bookmark: Bookmark) => void;
-  onOpenChat: () => void;
 }
 
 export const UtilityPanel: React.FC<UtilityPanelProps> = ({
@@ -36,7 +35,6 @@ export const UtilityPanel: React.FC<UtilityPanelProps> = ({
   onSelectCategory,
   onSelectRule,
   onSelectBookmark,
-  onOpenChat,
 }) => {
   const handleLogout = async () => {
     try {
@@ -111,10 +109,6 @@ export const UtilityPanel: React.FC<UtilityPanelProps> = ({
                   <RoomManager 
                     user={user} 
                     userProfile={userProfile} 
-                    onOpenChat={() => {
-                      onOpenChat();
-                      onClose();
-                    }}
                   />
                 </section>
               )}

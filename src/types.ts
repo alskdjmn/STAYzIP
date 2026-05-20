@@ -64,6 +64,7 @@ export interface InventoryItem {
   name: string;
   category: InventoryCategory;
   addedAt: string;
+  addedBy?: string;
 }
 
 export interface Bookmark {

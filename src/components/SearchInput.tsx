@@ -6,6 +6,8 @@
 import React, { useState, useRef } from 'react';
 import { Search, X, Camera as CameraIcon, Image as ImageIcon } from 'lucide-react';
 import { CameraModal } from './CameraModal';
+import { compressImage } from '../utils/imageUtils';
+import { useTutorial } from '../contexts/TutorialContext';
 
 interface SearchInputProps {
   onSearch: (query: string, image?: string) => void;
@@ -18,6 +20,14 @@ export const SearchInput: React.FC<SearchInputProps> = ({ onSearch, placeholder,
   const [image, setImage] = useState<string | null>(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const { currentStep } = useTutorial();
+
+  React.useEffect(() => {
+    if (currentStep === 'home_ask') {
+      setQuery('원팬 토마토 파스타 초간단 레시피');
+    }
+  }, [currentStep]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,14 +38,16 @@ export const SearchInput: React.FC<SearchInputProps> = ({ onSearch, placeholder,
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressedBase64 = await compressImage(file);
+        setImage(compressedBase64);
+      } catch (err) {
+        console.error('이미지 압축 실패:', err);
+        alert('이미지를 처리하는 중 오류가 발생했습니다.');
+      }
     }
   };
 
@@ -70,7 +82,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({ onSearch, placeholder,
             <button
               type="button"
               onClick={() => setIsCameraOpen(true)}
-              className="p-2 text-gray-400 hover:text-blue-500 transition-colors"
+              className={`p-2 text-gray-400 hover:text-blue-500 transition-colors ${currentStep === 'home_search' ? 'ring-2 ring-blue-500 rounded-full animate-pulse' : ''}`}
               title="카메라 촬영"
             >
               <CameraIcon className="h-5 w-5" />
@@ -78,7 +90,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({ onSearch, placeholder,
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="p-2 text-gray-400 hover:text-blue-500 transition-colors"
+              className={`p-2 text-gray-400 hover:text-blue-500 transition-colors ${currentStep === 'home_search' ? 'ring-2 ring-blue-500 rounded-full animate-pulse' : ''}`}
               title="이미지 업로드"
             >
               <ImageIcon className="h-5 w-5" />
@@ -93,7 +105,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({ onSearch, placeholder,
             <button
               type="submit"
               disabled={!query.trim() && !image}
-              className="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`bg-blue-600 text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${currentStep === 'home_ask' ? 'ring-4 ring-blue-500 ring-offset-2 animate-pulse relative z-50' : ''}`}
             >
               질문
             </button>

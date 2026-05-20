@@ -47,11 +47,26 @@ export const CameraModal: React.FC<CameraModalProps> = ({ onClose, onCapture }) 
     if (videoRef.current && canvasRef.current) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      
+      let width = video.videoWidth;
+      let height = video.videoHeight;
+      const MAX_SIZE = 1024;
+
+      if (width > MAX_SIZE || height > MAX_SIZE) {
+        if (width > height) {
+          height = Math.round((height * MAX_SIZE) / width);
+          width = MAX_SIZE;
+        } else {
+          width = Math.round((width * MAX_SIZE) / height);
+          height = MAX_SIZE;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        ctx.drawImage(video, 0, 0, width, height);
         const imageUrl = canvas.toDataURL('image/jpeg', 0.8);
         setCapturedImage(imageUrl);
         stopCamera();

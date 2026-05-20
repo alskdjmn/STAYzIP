@@ -9,7 +9,7 @@ import { HomePage } from './pages/HomePage';
 import { CategoryPage } from './pages/CategoryPage';
 import { MyPage } from './pages/MyPage';
 import { ZipPage } from './pages/ZipPage';
-import { ChatPage } from './pages/ChatPage';
+
 import { ResultCard } from './components/ResultCard';
 import { HomeAssistRule, HomeAssistAnswer, IntentType, InventoryItem, InventoryCategory, ChatMessage, Bookmark, UserProfile, Room } from './types';
 import { RULES } from './data/mockData';
@@ -22,14 +22,27 @@ import { collection, onSnapshot, addDoc, deleteDoc, doc, setDoc, query, where, g
 import { LoginScreen } from './components/LoginScreen';
 import { SearchInput } from './components/SearchInput';
 import { motion, AnimatePresence } from 'motion/react';
+import { useTutorial } from './contexts/TutorialContext';
 
-type Page = 'home' | 'category' | 'zip' | 'mypage' | 'result' | 'chat';
+type Page = 'home' | 'category' | 'zip' | 'mypage' | 'result';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
-  const [activeTab, setActiveTab] = useState<Page>('home');
+  const getTabFromHash = () => {
+    let hash = window.location.hash.replace('#', '');
+    hash = hash.split('?')[0];
+    return (['home', 'category', 'zip', 'mypage', 'result'].includes(hash) ? hash : 'home') as Page;
+  };
+
+  const [activeTab, setActiveTab] = useState<Page>(getTabFromHash());
+
+  useEffect(() => {
+    const handleHashChange = () => setActiveTab(getTabFromHash());
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
   const [currentQuestion, setCurrentQuestion] = useState<string>('');
   const [currentAnswer, setCurrentAnswer] = useState<HomeAssistAnswer | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -37,41 +50,56 @@ export default function App() {
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [conversationHistory, setConversationHistory] = useState<ChatMessage[]>([]);
+  const [targetCategory, setTargetCategory] = useState<string | null>(null);
 
-  // 1. 대화 기록 로드 및 24시간 만료 처리
+  const { currentStep, isTutorialActive, nextStep, setTutorialReady } = useTutorial();
+
+  // Tutorial automatic navigation
+  useEffect(() => {
+    if (currentStep === 'zip_room') {
+      window.location.hash = 'zip';
+    } else if (currentStep === 'home_search') {
+      window.location.hash = 'home';
+    } else if (currentStep === 'mypage_bookmark') {
+      window.location.hash = 'mypage';
+    } else if (currentStep === 'category_tab') {
+      window.location.hash = 'category';
+    }
+  }, [currentStep]);
+
+  // 1. 대화 기록 로드 (Firestore)
   useEffect(() => {
     if (user) {
-      const saved = localStorage.getItem(`chat_history_${user.uid}`);
-      if (saved) {
-        try {
-          const { timestamp, history } = JSON.parse(saved);
-          // 24시간(86400000ms)이 지나지 않았으면 로드, 지났으면 삭제
-          if (Date.now() - timestamp < 24 * 60 * 60 * 1000) {
-            setConversationHistory(history);
+      getDoc(doc(db, 'users', user.uid, 'data', 'chatHistory')).then(docSnap => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (Date.now() - data.timestamp < 24 * 60 * 60 * 1000) {
+            setConversationHistory(data.history || []);
           } else {
-            localStorage.removeItem(`chat_history_${user.uid}`);
+            deleteDoc(docSnap.ref).catch(() => {});
             setConversationHistory([]);
           }
-        } catch (e) {
-          setConversationHistory([]);
         }
-      } else {
-        setConversationHistory([]);
-      }
+      }).catch(console.error);
     } else {
       setConversationHistory([]);
     }
   }, [user]);
 
-  // 2. 대화 기록 저장
+  // 2. 대화 기록 저장 (Firestore)
   useEffect(() => {
     if (user && conversationHistory.length > 0) {
-      localStorage.setItem(`chat_history_${user.uid}`, JSON.stringify({
-        timestamp: Date.now(),
-        history: conversationHistory
-      }));
+      try {
+        const cleanHistory = JSON.parse(JSON.stringify(conversationHistory));
+        setDoc(doc(db, 'users', user.uid, 'data', 'chatHistory'), {
+          timestamp: Date.now(),
+          history: cleanHistory
+        }).catch(console.error);
+      } catch (e) {
+        console.error("Firestore serialization error:", e);
+      }
     } else if (user && conversationHistory.length === 0) {
-      localStorage.removeItem(`chat_history_${user.uid}`);
+      deleteDoc(doc(db, 'users', user.uid, 'data', 'chatHistory')).catch(() => {});
     }
   }, [conversationHistory, user]);
 
@@ -84,6 +112,8 @@ export default function App() {
       if (!currentUser) {
         setInventoryItems([]);
         setUserProfile(null);
+      } else {
+        setTutorialReady(true);
       }
     });
     return () => unsubscribe();
@@ -115,6 +145,8 @@ export default function App() {
   // Inventory Real-time Listener (Depends on userProfile & room)
   useEffect(() => {
     if (!user || (!userProfile && isAuthChecking)) return;
+
+    setInventoryItems([]); // 상태 전환 시 기존 항목 초기화 (깜빡임 방지)
 
     // Use Room inventory if roomId exists, otherwise use personal inventory
     const inventoryRef = userProfile?.roomId 
@@ -156,6 +188,7 @@ export default function App() {
       name,
       category,
       addedAt: new Date().toISOString(),
+      addedBy: user.displayName || '사용자',
     };
 
     try {
@@ -202,6 +235,11 @@ export default function App() {
         const bookmarkRef = doc(db, 'users', user.uid, 'bookmarks', bookmarkId);
         await setDoc(bookmarkRef, newBookmark);
       }
+      
+      // Tutorial progression
+      if (currentStep === 'result_bookmark') {
+        nextStep();
+      }
     } catch (error) {
       console.error('Error toggling bookmark:', error);
     }
@@ -226,6 +264,7 @@ export default function App() {
     setCurrentQuestion(bookmark.question);
     setCurrentAnswer(bookmark.answer);
     setActiveTab('result');
+    window.location.hash = 'result';
     window.scrollTo(0, 0);
   };
 
@@ -235,15 +274,18 @@ export default function App() {
     const userMessage: ChatMessage = {
       role: 'user',
       content: query,
-      image,
       timestamp: new Date().toISOString()
     };
+    if (image) {
+      userMessage.image = image;
+    }
 
     // 최신 대화가 맨 위로 오도록 배열 맨 앞에 추가
     setConversationHistory(prev => [userMessage, ...prev]);
     setCurrentQuestion(query || '사진으로 질문하기');
     setIsLoading(true);
     setActiveTab('result');
+    window.location.hash = 'result';
     window.scrollTo(0, 0);
 
     try {
@@ -263,6 +305,11 @@ export default function App() {
         return newArr;
       });
       setCurrentAnswer(answer);
+      
+      // If tutorial is at home_ask step, progress to result_bookmark after answer arrives
+      if (currentStep === 'home_ask') {
+        nextStep(); // progresses to result_bookmark
+      }
     } catch (error) {
       console.error("Search Error:", error);
     } finally {
@@ -288,6 +335,7 @@ export default function App() {
     setCurrentQuestion(rule.question);
     setCurrentAnswer(rule.answer);
     setActiveTab('result');
+    window.location.hash = 'result';
     window.scrollTo(0, 0);
   };
 
@@ -295,12 +343,17 @@ export default function App() {
     setConversationHistory([]);
     setCurrentQuestion('');
     setCurrentAnswer(null);
-    setActiveTab('home');
+    window.location.hash = 'home';
     window.scrollTo(0, 0);
+    
+    // Progress tutorial if on result_reset step
+    if (currentStep === 'result_reset') {
+      nextStep();
+    }
   };
 
   const handleNavigate = (tab: string) => {
-    setActiveTab(tab as Page);
+    window.location.hash = tab;
     window.scrollTo(0, 0);
   };
 
@@ -310,12 +363,15 @@ export default function App() {
         return (
           <HomePage 
             onSearch={handleSearch} 
-            onSelectCategory={() => setActiveTab('category')} 
+            onSelectCategory={(id) => {
+              setTargetCategory(id);
+              window.location.hash = `category?id=${id}`;
+            }} 
             onSelectRule={handleSelectRule}
           />
         );
       case 'category':
-        return <CategoryPage onSelectRule={handleSelectRule} />;
+        return <CategoryPage onSelectRule={handleSelectRule} initialCategoryId={targetCategory} />;
       case 'zip':
         return userProfile && <ZipPage 
           user={user} 
@@ -323,7 +379,6 @@ export default function App() {
           inventoryItems={inventoryItems} 
           onAddInventoryItem={handleAddInventoryItem} 
           onRemoveInventoryItem={handleRemoveInventoryItem} 
-          onOpenChat={() => handleNavigate('chat')} 
         />;
       case 'mypage':
         return userProfile && <MyPage 
@@ -333,8 +388,7 @@ export default function App() {
           onSelectBookmark={handleSelectBookmark} 
           onLogout={() => { handleNavigate('home'); setUser(null); }} 
         />;
-      case 'chat':
-        return userProfile && <ChatPage user={user} userProfile={userProfile} onBack={() => handleNavigate('home')} />;
+
       case 'result':
         return (
           <div className="space-y-12 pb-32">
@@ -343,7 +397,7 @@ export default function App() {
               <h2 className="text-xl font-black text-gray-900">대화 내용</h2>
               <button 
                 onClick={handleResetConversation}
-                className="flex items-center space-x-2 px-4 py-2 bg-white hover:bg-red-50 text-gray-600 hover:text-red-600 rounded-full border border-gray-200 hover:border-red-200 transition-all font-bold text-sm shadow-sm"
+                className={`flex items-center space-x-2 px-4 py-2 bg-white hover:bg-red-50 text-gray-600 hover:text-red-600 rounded-full border border-gray-200 hover:border-red-200 transition-all font-bold text-sm shadow-sm ${currentStep === 'result_reset' ? 'ring-4 ring-blue-500 ring-offset-2 animate-pulse z-50 relative' : ''}`}
               >
                 <RotateCcw className="w-4 h-4" />
                 <span>대화 리셋</span>
@@ -415,7 +469,7 @@ export default function App() {
           </div>
         );
       default:
-        return <HomePage onSearch={handleSearch} onSelectCategory={() => setActiveTab('category')} onSelectRule={handleSelectRule} />;
+        return <HomePage onSearch={handleSearch} onSelectCategory={() => { window.location.hash = 'category'; }} onSelectRule={handleSelectRule} />;
     }
   };
 
@@ -447,12 +501,12 @@ export default function App() {
         onAddInventoryItem={handleAddInventoryItem}
         onRemoveInventoryItem={handleRemoveInventoryItem}
         onSelectCategory={(id) => {
-          setActiveTab('category');
+          setTargetCategory(id);
+          window.location.hash = `category?id=${id}`;
           setIsUtilityPanelOpen(false);
         }}
         onSelectRule={handleSelectRule}
         onSelectBookmark={handleSelectBookmark}
-        onOpenChat={() => setActiveTab('chat')}
         userProfile={userProfile}
       />
     </Layout>

@@ -18,7 +18,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onNavigate,
     { id: 'home', label: '홈', icon: Home },
     { id: 'category', label: '카테고리', icon: Search },
     { id: 'zip', label: 'ZIP', icon: FileText },
-    { id: 'chat', label: '채팅', icon: MessageSquare },
     { id: 'mypage', label: '마이페이지', icon: User },
   ];
 
@@ -30,9 +29,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onNavigate,
           className="flex items-center space-x-2 cursor-pointer" 
           onClick={() => onNavigate('home')}
         >
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-            <Home className="text-white h-5 w-5" />
-          </div>
+          <img src="/logo.png" alt="STAYZIP Logo" className="w-8 h-8 rounded-lg object-cover" />
           <span className="text-xl font-black text-blue-600 tracking-tight">STAYZIP</span>
         </div>
         <button 
@@ -72,9 +69,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onNavigate,
       <footer className="hidden md:block bg-white border-t border-gray-100 py-12 px-4 mt-auto">
         <div className="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center">
           <div className="flex items-center space-x-2 mb-4 md:mb-0">
-            <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center">
-              <Home className="text-white h-4 w-4" />
-            </div>
+            <img src="/logo.png" alt="STAYZIP Logo" className="w-6 h-6 rounded object-cover" />
             <span className="text-lg font-black text-blue-600 tracking-tight">STAYZIP</span>
           </div>
           <p className="text-sm text-gray-400">© 2026 STAYZIP. 1인 가구를 위한 생활 도우미.</p>

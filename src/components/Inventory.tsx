@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, Package } from 'lucide-react';
 import { InventoryItem, InventoryCategory } from '../types';
+import { useTutorial } from '../contexts/TutorialContext';
 
 interface InventoryProps {
   items: InventoryItem[];
@@ -16,6 +17,7 @@ interface InventoryProps {
 export const Inventory: React.FC<InventoryProps> = ({ items, onAddItem, onRemoveItem }) => {
   const [newItemName, setNewItemName] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<InventoryCategory>('냉장고');
+  const { currentStep, nextStep } = useTutorial();
 
   const categories: InventoryCategory[] = ['냉장고', '청소용품', '기타'];
 
@@ -24,6 +26,7 @@ export const Inventory: React.FC<InventoryProps> = ({ items, onAddItem, onRemove
     if (newItemName.trim()) {
       onAddItem(newItemName.trim(), selectedCategory);
       setNewItemName('');
+      if (currentStep === 'zip_inventory') nextStep();
     }
   };
 
@@ -40,7 +43,7 @@ export const Inventory: React.FC<InventoryProps> = ({ items, onAddItem, onRemove
           />
           <button
             type="submit"
-            className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-colors"
+            className={`bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-colors ${currentStep === 'zip_inventory' ? 'ring-4 ring-blue-500 ring-offset-2 animate-pulse relative z-50' : ''}`}
           >
             <Plus className="h-5 w-5" />
           </button>
@@ -82,7 +85,12 @@ export const Inventory: React.FC<InventoryProps> = ({ items, onAddItem, onRemove
                       key={item.id}
                       className="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-100 shadow-sm"
                     >
-                      <span className="text-sm font-medium text-gray-700">{item.name}</span>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-gray-700">{item.name}</span>
+                        {item.addedBy && (
+                          <span className="text-[10px] text-gray-400 mt-0.5">{item.addedBy}님이 등록함</span>
+                        )}
+                      </div>
                       <button
                         onClick={() => onRemoveItem(item.id)}
                         className="text-gray-300 hover:text-red-500 transition-colors"

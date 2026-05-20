@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, LogIn, LogOut, Copy, Check, X, MessageCircle } from 'lucide-react';
+import { Users, Plus, LogIn, LogOut, Copy, Check, X } from 'lucide-react';
 import { db } from '../firebase';
-import { collection, addDoc, query, where, getDocs, doc, setDoc, updateDoc, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, doc, setDoc, updateDoc, arrayUnion, arrayRemove, getDoc, deleteDoc } from 'firebase/firestore';
 import { User } from 'firebase/auth';
 import { UserProfile, Room } from '../types';
+import { useTutorial } from '../contexts/TutorialContext';
 
 interface RoomManagerProps {
   user: User;
   userProfile: UserProfile | null;
-  onOpenChat?: () => void;
 }
 
 const withTimeout = <T,>(promise: Promise<T>, ms = 5000): Promise<T> => {
@@ -18,7 +18,7 @@ const withTimeout = <T,>(promise: Promise<T>, ms = 5000): Promise<T> => {
   ]);
 };
 
-export const RoomManager: React.FC<RoomManagerProps> = ({ user, userProfile, onOpenChat }) => {
+export const RoomManager: React.FC<RoomManagerProps> = ({ user, userProfile }) => {
   const [isCreating, setIsCreating] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [roomName, setRoomName] = useState('');
@@ -27,6 +27,8 @@ export const RoomManager: React.FC<RoomManagerProps> = ({ user, userProfile, onO
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const { currentStep, nextStep } = useTutorial();
 
   useEffect(() => {
     const fetchCurrentRoom = async () => {
@@ -139,9 +141,13 @@ export const RoomManager: React.FC<RoomManagerProps> = ({ user, userProfile, onO
 
     setIsSubmitting(true);
     try {
-      await withTimeout(updateDoc(doc(db, 'rooms', userProfile.roomId), {
-        members: arrayRemove(user.uid)
-      }));
+      if (currentRoom && currentRoom.members.length === 1 && currentRoom.members[0] === user.uid) {
+        await withTimeout(deleteDoc(doc(db, 'rooms', userProfile.roomId)));
+      } else {
+        await withTimeout(updateDoc(doc(db, 'rooms', userProfile.roomId), {
+          members: arrayRemove(user.uid)
+        }));
+      }
 
       await withTimeout(setDoc(doc(db, 'users', user.uid), {
         roomId: null
@@ -176,15 +182,7 @@ export const RoomManager: React.FC<RoomManagerProps> = ({ user, userProfile, onO
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            {onOpenChat && (
-              <button 
-                onClick={onOpenChat}
-                className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors tooltip"
-                title="채팅방"
-              >
-                <MessageCircle className="w-5 h-5" />
-              </button>
-            )}
+
             <button 
               onClick={handleLeaveRoom}
               className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors tooltip"
@@ -229,8 +227,11 @@ export const RoomManager: React.FC<RoomManagerProps> = ({ user, userProfile, onO
       {!isCreating && !isJoining ? (
         <div className="flex space-x-3">
           <button 
-            onClick={() => setIsCreating(true)}
-            className="flex-1 flex flex-col items-center justify-center p-3 sm:p-4 bg-white border border-gray-200 rounded-2xl hover:border-blue-300 hover:shadow-md transition-all group"
+            onClick={() => {
+              setIsCreating(true);
+              if (currentStep === 'zip_room') nextStep();
+            }}
+            className={`flex-1 flex flex-col items-center justify-center p-3 sm:p-4 bg-white border border-gray-200 rounded-2xl hover:border-blue-300 hover:shadow-md transition-all group ${currentStep === 'zip_room' ? 'ring-4 ring-blue-500 ring-offset-2 animate-pulse relative z-50' : ''}`}
           >
             <Plus className="w-6 h-6 text-gray-400 group-hover:text-blue-500 mb-2 transition-colors" />
             <span className="text-sm font-bold text-gray-700">방 만들기</span>

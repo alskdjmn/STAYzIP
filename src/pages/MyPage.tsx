@@ -8,6 +8,7 @@ import { Bookmark as BookmarkIcon, LogOut, User as UserIcon, ChevronRight } from
 import { Bookmark, UserProfile } from '../types';
 import { auth } from '../firebase';
 import { User } from 'firebase/auth';
+import { useTutorial } from '../contexts/TutorialContext';
 
 interface MyPageProps {
   user: User;
@@ -32,6 +33,8 @@ export const MyPage: React.FC<MyPageProps> = ({
       console.error('Logout Error:', error);
     }
   };
+
+  const { currentStep, nextStep } = useTutorial();
 
   return (
     <div className="space-y-12 max-w-2xl mx-auto">
@@ -65,7 +68,7 @@ export const MyPage: React.FC<MyPageProps> = ({
       </section>
 
       {/* Bookmarks */}
-      <section>
+      <section className={`${currentStep === 'mypage_bookmark' ? 'ring-4 ring-blue-500 ring-offset-4 rounded-3xl animate-pulse relative z-50 bg-white p-4' : ''}`}>
         <div className="flex items-center space-x-2 mb-6">
           <div className="p-2 bg-blue-100 rounded-lg">
             <BookmarkIcon className="h-5 w-5 text-blue-600" />
@@ -103,6 +106,15 @@ export const MyPage: React.FC<MyPageProps> = ({
             <BookmarkIcon className="h-8 w-8 text-gray-200 mx-auto mb-3" />
             <p className="text-sm font-bold text-gray-400">저장한 답변이 없습니다</p>
           </div>
+        )}
+
+        {currentStep === 'mypage_bookmark' && (
+          <button
+            onClick={() => nextStep()}
+            className="w-full mt-6 py-4 bg-blue-600 text-white rounded-2xl font-black text-lg hover:bg-blue-700 transition-all shadow-xl animate-bounce"
+          >
+            다음 단계로 👉
+          </button>
         )}
       </section>
     </div>
