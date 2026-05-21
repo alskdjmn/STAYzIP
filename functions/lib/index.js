@@ -125,7 +125,7 @@ exports.generateAnswer = (0, https_1.onCall)({ cors: true, region: "asia-northea
             intent: 'freeform',
             normalized_query: question,
             user_answer: isQuotaError
-                ? '현재 이용자가 많아 응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.'
+                ? 'API 일일 무료 제공량(호출 한도)이 모두 소진되었습니다. 내일 다시 시도하시거나 구글 AI 스튜디오에서 결제 수단을 등록하여 한도를 늘려주세요.'
                 : '죄송합니다. 서버에서 답변 생성 중 문제가 발생했습니다.',
             answer_summary: '서비스 오류',
             tags: ['오류'],

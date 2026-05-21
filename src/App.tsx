@@ -98,8 +98,6 @@ export default function App() {
       } catch (e) {
         console.error("Firestore serialization error:", e);
       }
-    } else if (user && conversationHistory.length === 0) {
-      deleteDoc(doc(db, 'users', user.uid, 'data', 'chatHistory')).catch(() => {});
     }
   }, [conversationHistory, user]);
 
@@ -461,7 +459,7 @@ export default function App() {
               <div className="fixed bottom-24 w-full max-w-md mx-auto px-4 z-40 pointer-events-none left-0 right-0">
                 <div className="w-full pointer-events-auto">
                   <div className="bg-white/80 backdrop-blur-md p-4 rounded-3xl shadow-2xl border border-white/20">
-                    <SearchInput onSearch={handleSearch} placeholder="추가로 궁금한 점을 물어보세요..." />
+                    <SearchInput onSearch={handleSearch} placeholder="궁금한 점을 물어보세요..." />
                   </div>
                 </div>
               </div>
