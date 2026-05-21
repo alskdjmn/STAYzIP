@@ -16,7 +16,12 @@ interface HomePageProps {
 
 export const HomePage: React.FC<HomePageProps> = ({ onSearch, onSelectCategory, onSelectRule }) => {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-12">
+    <div 
+      className="flex flex-col items-center justify-center min-h-[60vh] space-y-12 w-full rounded-[3rem] p-6"
+      style={{
+        background: 'radial-gradient(circle at center, #bfdbfe 0%, #eff6ff 50%, transparent 80%)'
+      }}
+    >
       {/* Hero Section */}
       <section className="text-center w-full">
         <motion.div

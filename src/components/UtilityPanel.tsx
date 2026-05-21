@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Package, LayoutGrid, LogOut, User as UserIcon, Bookmark as BookmarkIcon, ChevronRight } from 'lucide-react';
+import { X, Package, LayoutGrid, LogOut, User as UserIcon, Bookmark as BookmarkIcon, ChevronRight, Trash2 } from 'lucide-react';
 import { Inventory } from './Inventory';
 import { CategoryCard } from './CategoryCard';
 import { RoomManager } from './RoomManager';
@@ -21,6 +21,7 @@ interface UtilityPanelProps {
   onSelectCategory: (id: string) => void;
   onSelectRule: (rule: HomeAssistRule) => void;
   onSelectBookmark: (bookmark: Bookmark) => void;
+  onDeleteBookmark?: (bookmark: Bookmark) => void;
 }
 
 export const UtilityPanel: React.FC<UtilityPanelProps> = ({
@@ -35,6 +36,7 @@ export const UtilityPanel: React.FC<UtilityPanelProps> = ({
   onSelectCategory,
   onSelectRule,
   onSelectBookmark,
+  onDeleteBookmark,
 }) => {
   const handleLogout = async () => {
     try {
@@ -125,19 +127,33 @@ export const UtilityPanel: React.FC<UtilityPanelProps> = ({
                 {bookmarks && bookmarks.length > 0 ? (
                   <div className="space-y-3">
                     {bookmarks.map((bookmark) => (
-                      <button
+                      <div
                         key={bookmark.id}
                         onClick={() => {
                           onSelectBookmark(bookmark);
                           onClose();
                         }}
-                        className="w-full text-left bg-white border border-gray-100 p-4 rounded-2xl hover:border-blue-200 hover:shadow-md transition-all group"
+                        className="w-full text-left bg-white border border-gray-100 p-4 rounded-2xl hover:border-blue-200 hover:shadow-md transition-all group cursor-pointer"
                       >
                         <div className="flex justify-between items-start mb-2">
                           <p className="text-sm font-bold text-gray-900 line-clamp-1 flex-1 pr-2">
                             {bookmark.question}
                           </p>
-                          <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-blue-500 transition-colors" />
+                          <div className="flex items-center space-x-1">
+                            {onDeleteBookmark && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onDeleteBookmark(bookmark);
+                                }}
+                                className="p-1.5 text-gray-300 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50"
+                                title="삭제"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            )}
+                            <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-blue-500 transition-colors" />
+                          </div>
                         </div>
                         <div className="flex items-center justify-between">
                           <p className="text-xs text-gray-400">
@@ -147,7 +163,7 @@ export const UtilityPanel: React.FC<UtilityPanelProps> = ({
                             {bookmark.answer.intent}
                           </span>
                         </div>
-                      </button>
+                      </div>
                     ))}
                   </div>
                 ) : (

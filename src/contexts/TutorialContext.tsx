@@ -143,9 +143,10 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         {/* Global Floating Message Box for Active Tutorial */}
         {isTutorialActive && (
           <motion.div 
-            initial={{ opacity: 0, y: 50 }}
+            key={currentStep}
+            initial={{ opacity: 0, y: ['zip_room', 'result_bookmark', 'result_reset'].includes(currentStep) ? 50 : -50 }}
             animate={{ opacity: 1, y: 0 }}
-            className="fixed bottom-24 left-0 right-0 z-[90] flex justify-center px-4 pointer-events-none"
+            className={`fixed ${['zip_room', 'result_bookmark', 'result_reset'].includes(currentStep) ? 'bottom-24' : 'top-24'} left-0 right-0 z-[90] flex justify-center px-4 pointer-events-none`}
           >
             <div className="bg-gray-900/90 backdrop-blur-md text-white px-6 py-4 rounded-2xl shadow-2xl max-w-sm w-full border border-gray-700 pointer-events-auto">
               <div className="flex items-start justify-between">
@@ -154,7 +155,7 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                   <p className="text-sm font-medium leading-snug">
                     {currentStep === 'zip_room' && '앱 하단의 ZIP 탭입니다! 여기서 방을 만들거나 코드로 참여하여 룸메이트와 사물함을 공유할 수 있습니다. 방을 먼저 추가하거나 생성해주세요!'}
                     {currentStep === 'zip_inventory' && '하단의 인벤토리 섹션에서는 냉장고, 청소용품 등 가지고 있는 아이템을 카테고리별로 채워 넣을 수 있습니다. "+" 버튼을 눌러보세요.'}
-                    {currentStep === 'home_search' && '이제 홈 화면입니다. 궁금한 점을 입력하거나, 카메라/사진 아이콘을 눌러 사진으로 질문할 수도 있습니다.'}
+                    {currentStep === 'home_search' && '이제 홈 화면입니다. 카메라 아이콘과 사진 아이콘을 한 번씩 눌러 기능을 확인해보세요.'}
                     {currentStep === 'home_ask' && '예시 질문이 준비되었습니다! 우측의 "질문" 버튼을 눌러보세요.'}
                     {currentStep === 'result_bookmark' && '자취 비서의 답변이 완료되었습니다! 유용한 정보라면 우측 상단의 "저장" 버튼을 눌러 북마크 해보세요.'}
                     {currentStep === 'result_reset' && '다른 질문을 새롭게 시작하고 싶다면 화면 상단의 "대화 리셋" 버튼을 누르세요.'}
@@ -168,14 +169,6 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              {currentStep === 'home_search' && (
-                <button 
-                  onClick={nextStep}
-                  className="w-full mt-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl transition-colors text-sm"
-                >
-                  다음 단계로
-                </button>
-              )}
             </div>
           </motion.div>
         )}

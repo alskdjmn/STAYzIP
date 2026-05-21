@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { Home, Search, HelpCircle, User, Menu, FileText, MessageSquare } from 'lucide-react';
+import { useTutorial } from '../contexts/TutorialContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -14,6 +15,7 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onNavigate, onToggleUtility }) => {
+  const { currentStep } = useTutorial();
   const navItems = [
     { id: 'home', label: '홈', icon: Home },
     { id: 'category', label: '카테고리', icon: Search },
@@ -22,7 +24,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onNavigate,
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-900 max-w-md mx-auto shadow-2xl relative overflow-x-hidden border-x border-gray-100">
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-900 max-w-lg mx-auto shadow-2xl relative overflow-x-hidden border-x border-gray-100">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm px-4 py-3 flex items-center justify-between w-full">
         <div 
@@ -46,7 +48,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onNavigate,
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 w-full max-w-md mx-auto bg-white border-t border-gray-100 px-6 py-3 flex justify-between items-center z-50 shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
+      <nav className="fixed bottom-0 w-full max-w-lg mx-auto bg-white border-t border-gray-100 px-6 py-3 flex justify-between items-center z-50 shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -54,7 +56,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onNavigate,
             <button
               key={item.id}
               onClick={() => onNavigate(item.id)}
-              className={`flex flex-col items-center space-y-1 transition-colors ${
+              className={`relative flex flex-col items-center space-y-1 transition-colors ${
                 isActive ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
               }`}
             >

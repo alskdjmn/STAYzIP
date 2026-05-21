@@ -39,11 +39,11 @@ export const Inventory: React.FC<InventoryProps> = ({ items, onAddItem, onRemove
             value={newItemName}
             onChange={(e) => setNewItemName(e.target.value)}
             placeholder="품목 이름을 입력하세요"
-            className="flex-1 px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            className={`flex-1 px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${currentStep === 'zip_inventory' ? 'ring-4 ring-blue-500 ring-offset-2 animate-bounce z-50 relative' : ''}`}
           />
           <button
             type="submit"
-            className={`bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-colors ${currentStep === 'zip_inventory' ? 'ring-4 ring-blue-500 ring-offset-2 animate-pulse relative z-50' : ''}`}
+            className={`relative bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-colors ${currentStep === 'zip_inventory' ? 'ring-4 ring-blue-500 ring-offset-2 animate-bounce z-50' : ''}`}
           >
             <Plus className="h-5 w-5" />
           </button>

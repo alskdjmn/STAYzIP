@@ -8,12 +8,12 @@ export type IntentType = 'faq' | 'recommendation' | 'plan' | 'summary' | 'search
 
 export interface HomeAssistAnswer {
   intent: IntentType;
-  normalized_query: string;
+  normalized_query?: string;
   user_answer: string;
   answer_summary: string;
   tags: string[];
-  reusable: boolean;
-  confidence: number;
+  reusable?: boolean;
+  confidence?: number;
 }
 
 export interface ChatMessage {
@@ -22,6 +22,7 @@ export interface ChatMessage {
   image?: string;
   answer?: HomeAssistAnswer;
   timestamp: string;
+  originalQuestion?: string;
 }
 
 export interface RoomMessage {

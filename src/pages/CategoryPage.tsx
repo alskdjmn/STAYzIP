@@ -11,6 +11,7 @@ import { CategoryArticleView } from '../components/CategoryArticleView';
 import { HomeAssistRule } from '../types';
 import { SearchInput } from '../components/SearchInput';
 import { useTutorial } from '../contexts/TutorialContext';
+import { Search, ChevronRight, FileText, ArrowLeft } from 'lucide-react';
 
 interface CategoryPageProps {
   onSelectRule?: (rule: HomeAssistRule) => void;
@@ -86,7 +87,7 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({ onSelectRule, initia
         <p className="text-gray-500 text-lg">생활 분야별로 궁금한 점을 찾아보세요.</p>
       </div>
 
-      <div className={`grid grid-cols-2 md:grid-cols-3 gap-4 ${currentStep === 'category_tab' ? 'ring-4 ring-blue-500 ring-offset-4 rounded-3xl animate-pulse relative z-50 p-2 bg-white' : ''}`}>
+      <div className={`relative grid grid-cols-2 md:grid-cols-3 gap-4 ${currentStep === 'category_tab' ? 'ring-4 ring-blue-500 ring-offset-4 rounded-3xl animate-gentle-bounce z-50 p-2 bg-white' : ''}`}>
         {CATEGORIES.map((cat) => (
           <div key={cat.id} className={selectedCategoryId === cat.id ? 'ring-2 ring-blue-500 rounded-2xl' : ''}>
             <CategoryCard 
@@ -121,7 +122,7 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({ onSelectRule, initia
             <p className="text-gray-400 font-bold text-lg">궁금한 카테고리를 먼저 선택해주세요.</p>
           </div>
         ) : filteredRules.length > 0 ? (
-          <div className={currentStep === 'category_article' ? 'ring-4 ring-blue-500 ring-offset-4 rounded-3xl animate-pulse relative z-50 p-2 bg-white' : ''}>
+          <div className={`relative ${currentStep === 'category_article' ? 'ring-4 ring-blue-500 ring-offset-4 rounded-3xl animate-gentle-bounce z-50 p-2 bg-white' : ''}`}>
             <RecentQuestionsList 
               questions={filteredRules} 
               onSelect={handleSelectArticle} 

@@ -74,7 +74,15 @@ export default function App() {
         if (docSnap.exists()) {
           const data = docSnap.data();
           if (Date.now() - data.timestamp < 24 * 60 * 60 * 1000) {
-            setConversationHistory(data.history || []);
+            const rawHistory = data.history || [];
+            // 이전 북마크 버그로 인해 user 메시지에 AI 텍스트가 들어간 쓰레기 데이터 필터링
+            const fixedHistory = rawHistory.filter((msg: any) => {
+              if (msg.role === 'user' && msg.content && (msg.content.includes('[준비물]') || msg.content.length > 150)) {
+                return false;
+              }
+              return true;
+            });
+            setConversationHistory(fixedHistory);
           } else {
             deleteDoc(docSnap.ref).catch(() => {});
             setConversationHistory([]);
@@ -244,21 +252,16 @@ export default function App() {
   };
 
   const handleSelectBookmark = (bookmark: Bookmark) => {
-    const userMessage: ChatMessage = {
-      role: 'user',
-      content: bookmark.question,
-      timestamp: new Date().toISOString()
-    };
-    
     const assistantMessage: ChatMessage = {
       role: 'assistant',
       content: bookmark.answer.user_answer,
       answer: bookmark.answer,
-      timestamp: bookmark.timestamp
+      timestamp: bookmark.timestamp,
+      originalQuestion: bookmark.question
     };
     
-    // 최신 대화가 맨 위로 오도록 앞에 추가
-    setConversationHistory(prev => [userMessage, assistantMessage, ...prev]);
+    // 저장된 답변만 보이게 하기 위해 AI 응답만 단독으로 설정 (기존 내역 초기화)
+    setConversationHistory([assistantMessage]);
     setCurrentQuestion(bookmark.question);
     setCurrentAnswer(bookmark.answer);
     setActiveTab('result');
@@ -337,13 +340,23 @@ export default function App() {
     window.scrollTo(0, 0);
   };
 
-  const handleResetConversation = () => {
+  const handleResetConversation = async () => {
     setConversationHistory([]);
     setCurrentQuestion('');
     setCurrentAnswer(null);
     window.location.hash = 'home';
     window.scrollTo(0, 0);
-    
+
+    // 명시적으로 Firestore에서도 삭제하여 완전 리셋
+    if (user) {
+      try {
+        const { deleteDoc, doc } = await import('firebase/firestore');
+        await deleteDoc(doc(db, 'users', user.uid, 'data', 'chatHistory'));
+      } catch (e) {
+        console.error('Failed to reset chat history in firestore', e);
+      }
+    }
+
     // Progress tutorial if on result_reset step
     if (currentStep === 'result_reset') {
       nextStep();
@@ -384,6 +397,16 @@ export default function App() {
           userProfile={userProfile} 
           bookmarks={bookmarks} 
           onSelectBookmark={handleSelectBookmark} 
+          onDeleteBookmark={async (bookmark) => {
+            if (!user) return;
+            try {
+              const { doc, deleteDoc } = await import('firebase/firestore');
+              const bookmarkRef = doc(db, 'users', user.uid, 'bookmarks', bookmark.id);
+              await deleteDoc(bookmarkRef);
+            } catch (e) {
+              console.error('Failed to delete bookmark:', e);
+            }
+          }}
           onLogout={() => { handleNavigate('home'); setUser(null); }} 
         />;
 
@@ -395,7 +418,7 @@ export default function App() {
               <h2 className="text-xl font-black text-gray-900">대화 내용</h2>
               <button 
                 onClick={handleResetConversation}
-                className={`flex items-center space-x-2 px-4 py-2 bg-white hover:bg-red-50 text-gray-600 hover:text-red-600 rounded-full border border-gray-200 hover:border-red-200 transition-all font-bold text-sm shadow-sm ${currentStep === 'result_reset' ? 'ring-4 ring-blue-500 ring-offset-2 animate-pulse z-50 relative' : ''}`}
+                className={`relative flex items-center space-x-2 px-4 py-2 bg-white hover:bg-red-50 text-gray-600 hover:text-red-600 rounded-full border border-gray-200 hover:border-red-200 transition-all font-bold text-sm shadow-sm ${currentStep === 'result_reset' ? 'ring-4 ring-blue-500 ring-offset-2 animate-bounce z-50' : ''}`}
               >
                 <RotateCcw className="w-4 h-4" />
                 <span>대화 리셋</span>
@@ -404,59 +427,77 @@ export default function App() {
 
             <AnimatePresence mode="popLayout">
               {conversationHistory && conversationHistory.length > 0 && conversationHistory.map((msg, idx) => (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4 }}
-                >
-                  {msg.role === 'user' ? (
-                    <div className="flex items-start space-x-4 w-full px-4">
-                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <UserIcon className="w-5 h-5 text-blue-600" />
+                <div key={idx} className="w-full">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    {msg.role === 'user' ? (
+                      <div className="flex items-start space-x-4 w-full px-4 mb-4">
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <UserIcon className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div className="bg-white p-6 rounded-3xl rounded-tl-none border border-gray-100 shadow-sm flex-1">
+                          {msg.image && (
+                            <div className="mb-4">
+                              <img src={msg.image} alt="User attached" className="max-w-xs rounded-2xl shadow-sm border border-gray-200" />
+                            </div>
+                          )}
+                          {msg.content && <p className="text-xl font-black text-gray-900 leading-tight">“{msg.content}”</p>}
+                        </div>
                       </div>
-                      <div className="bg-white p-6 rounded-3xl rounded-tl-none border border-gray-100 shadow-sm flex-1">
-                        {msg.image && (
-                          <div className="mb-4">
-                            <img src={msg.image} alt="User attached" className="max-w-xs rounded-2xl shadow-sm border border-gray-200" />
+                    ) : (
+                      (() => {
+                        const prevMsg = idx > 0 ? conversationHistory[idx - 1] : null;
+                        const questionText = msg.originalQuestion || (prevMsg?.role === 'user' ? (prevMsg.content || '') : '');
+                        
+                        return (
+                          <div className="flex items-start space-x-4 w-full px-4 mb-12">
+                            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                              <Bot className="w-5 h-5 text-white" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              {msg.answer ? (
+                                <ResultCard 
+                                  question={questionText} 
+                                  answer={msg.answer} 
+                                  onBack={handleResetConversation} 
+                                  onSearch={handleSearch}
+                                  isBookmarked={bookmarks.some(b => b.question === questionText)}
+                                  onToggleBookmark={() => msg.answer && handleToggleBookmark(questionText, msg.answer)}
+                                />
+                              ) : (
+                                <div className="bg-white p-5 rounded-3xl rounded-tl-none shadow-sm border border-gray-100 inline-block">
+                                  <p className="text-gray-900 text-lg">{msg.content}</p>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        )}
-                        {msg.content && <p className="text-xl font-black text-gray-900 leading-tight">“{msg.content}”</p>}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-start space-x-4 w-full px-4">
-                      <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-                        <Bot className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        {msg.answer && (
-                          <ResultCard 
-                            question={msg.content} 
-                            answer={msg.answer} 
-                            onBack={handleResetConversation} 
-                            onSearch={handleSearch}
-                            isBookmarked={bookmarks.some(b => b.question === msg.content)}
-                            onToggleBookmark={() => msg.answer && handleToggleBookmark(msg.content, msg.answer)}
-                          />
-                        )}
-                      </div>
-                    </div>
+                        );
+                      })()
+                    )}
+                  </motion.div>
+
+                  {/* 방금 추가된 최신 질문(idx === 0) 바로 아래에 로딩 애니메이션 표시 */}
+                  {isLoading && idx === 0 && msg.role === 'user' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      className="flex flex-col items-center justify-center py-12 mb-12"
+                    >
+                      <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
+                      <p className="text-gray-500 font-bold">답변 생성 중...</p>
+                    </motion.div>
                   )}
-                </motion.div>
+                </div>
               ))}
             </AnimatePresence>
 
-            {isLoading && (
-              <div className="flex flex-col items-center justify-center py-12">
-                <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
-                <p className="text-gray-500 font-bold">잠시만 기다려주세요...</p>
-              </div>
-            )}
-
             {/* Follow-up Input */}
             {!isLoading && !isTutorialActive && (
-              <div className="fixed bottom-24 w-full max-w-md mx-auto px-4 z-40 pointer-events-none left-0 right-0">
+              <div className="fixed bottom-24 w-full max-w-lg mx-auto px-4 z-40 pointer-events-none left-0 right-0">
                 <div className="w-full pointer-events-auto">
                   <div className="bg-white/80 backdrop-blur-md p-4 rounded-3xl shadow-2xl border border-white/20">
                     <SearchInput onSearch={handleSearch} placeholder="궁금한 점을 물어보세요..." />
@@ -505,6 +546,16 @@ export default function App() {
         }}
         onSelectRule={handleSelectRule}
         onSelectBookmark={handleSelectBookmark}
+        onDeleteBookmark={async (bookmark) => {
+          if (!user) return;
+          try {
+            const { doc, deleteDoc } = await import('firebase/firestore');
+            const bookmarkRef = doc(db, 'users', user.uid, 'bookmarks', bookmark.id);
+            await deleteDoc(bookmarkRef);
+          } catch (e) {
+            console.error('Failed to delete bookmark:', e);
+          }
+        }}
         userProfile={userProfile}
       />
     </Layout>

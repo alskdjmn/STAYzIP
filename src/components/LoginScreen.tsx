@@ -10,11 +10,17 @@ import { Home, LogIn } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export const LoginScreen: React.FC = () => {
+  const [isLoading, setIsLoading] = React.useState(false);
+
   const handleLogin = async () => {
+    if (isLoading) return;
+    setIsLoading(true);
     try {
       await signInWithPopup(auth, googleProvider);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login Error:', error);
+      alert(`로그인 오류가 발생했습니다: ${error.message}`);
+      setIsLoading(false);
     }
   };
 
@@ -45,14 +51,17 @@ export const LoginScreen: React.FC = () => {
 
         <button
           onClick={handleLogin}
-          className="w-full flex items-center justify-center space-x-3 bg-white border-2 border-gray-100 py-4 rounded-2xl font-bold text-gray-700 hover:bg-gray-50 hover:border-blue-100 transition-all shadow-sm group"
+          disabled={isLoading}
+          className={`w-full flex items-center justify-center space-x-3 bg-white border-2 border-gray-100 py-4 rounded-2xl font-bold text-gray-700 transition-all shadow-sm group ${isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50 hover:border-blue-100'}`}
         >
           <img 
             src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" 
             alt="Google" 
             className="w-6 h-6"
           />
-          <span className="group-hover:text-blue-600 transition-colors">구글로 시작하기</span>
+          <span className="group-hover:text-blue-600 transition-colors">
+            {isLoading ? '로그인 중...' : '구글로 시작하기'}
+          </span>
         </button>
         
         <p className="text-xs text-gray-400">

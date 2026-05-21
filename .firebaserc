@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "gen-lang-client-0005148680"
-  }
+  },
+  "targets": {
+    "gen-lang-client-0005148680": {
+      "hosting": {
+        "app": [
+          "stayzip"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

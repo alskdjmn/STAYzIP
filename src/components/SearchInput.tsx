@@ -21,7 +21,10 @@ export const SearchInput: React.FC<SearchInputProps> = ({ onSearch, placeholder,
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const { currentStep } = useTutorial();
+  const [cameraClicked, setCameraClicked] = useState(false);
+  const [imageClicked, setImageClicked] = useState(false);
+  
+  const { currentStep, nextStep } = useTutorial();
 
   React.useEffect(() => {
     if (currentStep === 'home_ask') {
@@ -35,6 +38,24 @@ export const SearchInput: React.FC<SearchInputProps> = ({ onSearch, placeholder,
       onSearch(query.trim(), image || undefined);
       setQuery('');
       setImage(null);
+    }
+  };
+
+  const handleCameraClick = () => {
+    if (currentStep === 'home_search') {
+      setCameraClicked(true);
+      if (imageClicked) nextStep();
+    } else {
+      setIsCameraOpen(true);
+    }
+  };
+
+  const handleImageClick = () => {
+    if (currentStep === 'home_search') {
+      setImageClicked(true);
+      if (cameraClicked) nextStep();
+    } else {
+      fileInputRef.current?.click();
     }
   };
 
@@ -81,16 +102,16 @@ export const SearchInput: React.FC<SearchInputProps> = ({ onSearch, placeholder,
           <div className="absolute inset-y-0 right-0 flex items-center pr-1.5 sm:pr-2 space-x-0.5 sm:space-x-1">
             <button
               type="button"
-              onClick={() => setIsCameraOpen(true)}
-              className={`p-1.5 sm:p-2 text-gray-400 hover:text-blue-500 transition-colors ${currentStep === 'home_search' ? 'ring-2 ring-blue-500 rounded-full animate-pulse' : ''}`}
+              onClick={handleCameraClick}
+              className={`relative p-1.5 sm:p-2 text-gray-400 hover:text-blue-500 transition-colors ${currentStep === 'home_search' && !cameraClicked ? 'ring-2 ring-blue-500 rounded-full animate-bounce' : ''}`}
               title="카메라 촬영"
             >
               <CameraIcon className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
             <button
               type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className={`p-1.5 sm:p-2 text-gray-400 hover:text-blue-500 transition-colors ${currentStep === 'home_search' ? 'ring-2 ring-blue-500 rounded-full animate-pulse' : ''}`}
+              onClick={handleImageClick}
+              className={`p-1.5 sm:p-2 text-gray-400 hover:text-blue-500 transition-colors ${currentStep === 'home_search' && !imageClicked ? 'ring-2 ring-blue-500 rounded-full animate-bounce' : ''}`}
               title="이미지 업로드"
             >
               <ImageIcon className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -105,7 +126,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({ onSearch, placeholder,
             <button
               type="submit"
               disabled={!query.trim() && !image}
-              className={`bg-blue-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${currentStep === 'home_ask' ? 'ring-4 ring-blue-500 ring-offset-2 animate-pulse relative z-50' : ''}`}
+              className={`relative bg-blue-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${currentStep === 'home_ask' ? 'ring-4 ring-blue-500 ring-offset-2 animate-bounce z-50' : ''}`}
             >
               질문
             </button>

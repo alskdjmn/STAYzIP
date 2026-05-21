@@ -79,12 +79,6 @@ export const FAQAccordion: React.FC<FAQAccordionProps> = ({ items }) => {
                     </div>
                   )}
 
-                  <div className="flex items-center space-x-4 text-[10px] font-black text-gray-300 uppercase tracking-widest pt-2">
-                    <div className="flex items-center space-x-1">
-                      <Info size={12} />
-                      <span>신뢰도: {(item.answer.confidence * 100).toFixed(0)}%</span>
-                    </div>
-                  </div>
                 </div>
               </motion.div>
             )}

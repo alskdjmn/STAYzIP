@@ -82,6 +82,7 @@ export const RoomManager: React.FC<RoomManagerProps> = ({ user, userProfile }) =
 
       setIsCreating(false);
       setRoomName('');
+      if (currentStep === 'zip_room') nextStep();
     } catch (err: any) {
       console.error("Create Room Error:", err);
       // Determine if it's a permissions error
@@ -229,9 +230,8 @@ export const RoomManager: React.FC<RoomManagerProps> = ({ user, userProfile }) =
           <button 
             onClick={() => {
               setIsCreating(true);
-              if (currentStep === 'zip_room') nextStep();
             }}
-            className={`flex-1 flex flex-col items-center justify-center p-3 sm:p-4 bg-white border border-gray-200 rounded-2xl hover:border-blue-300 hover:shadow-md transition-all group ${currentStep === 'zip_room' ? 'ring-4 ring-blue-500 ring-offset-2 animate-pulse relative z-50' : ''}`}
+            className={`flex-1 flex flex-col items-center justify-center p-3 sm:p-4 bg-white border border-gray-200 rounded-2xl hover:border-blue-300 hover:shadow-md transition-all group ${currentStep === 'zip_room' ? 'ring-4 ring-blue-500 ring-offset-2 animate-bounce relative z-50' : ''}`}
           >
             <Plus className="w-6 h-6 text-gray-400 group-hover:text-blue-500 mb-2 transition-colors" />
             <span className="text-sm font-bold text-gray-700">방 만들기</span>
@@ -254,12 +254,12 @@ export const RoomManager: React.FC<RoomManagerProps> = ({ user, userProfile }) =
             type="text" 
             value={roomName}
             onChange={(e) => setRoomName(e.target.value)}
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            className={`w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${currentStep === 'zip_room' ? 'ring-4 ring-blue-500 ring-offset-2 animate-bounce relative z-50' : ''}`}
             placeholder="예: 예지네 자취방"
             maxLength={15}
             autoFocus
           />
-          <button type="submit" disabled={!roomName.trim() || isSubmitting} className="w-full py-2 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors disabled:opacity-50">
+          <button type="submit" disabled={!roomName.trim() || isSubmitting} className={`w-full py-2 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors disabled:opacity-50 ${currentStep === 'zip_room' ? 'ring-4 ring-blue-500 ring-offset-2 animate-bounce relative z-50' : ''}`}>
             {isSubmitting ? '생성 중...' : '생성하기'}
           </button>
         </form>

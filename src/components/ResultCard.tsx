@@ -42,8 +42,11 @@ export const ResultCard: React.FC<ResultCardProps> = ({
     return labels[intent] || intent;
   };
 
-  const renderBlogStyle = (text: string) => {
-    if (!text) return <p className="text-[17px] font-bold text-gray-800 leading-loose">답변을 생성할 수 없습니다.</p>;
+  const renderBlogStyle = (rawText: string) => {
+    if (!rawText) return <p className="text-[17px] font-bold text-gray-800 leading-loose">답변을 생성할 수 없습니다.</p>;
+
+    // AI가 문자 그대로의 '\n' 또는 '/n' 기호를 출력하는 경우 실제 줄바꿈으로 치환
+    const text = rawText.replace(/\\n/g, '\n').replace(/\/n/g, '\n');
 
     let beforeText = '';
     let sections: { header: string; content: string }[] = [];
@@ -108,7 +111,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({
               // 사물함이나 주의사항 등은 다른 스타일
               if (sec.header.includes('사물함') || sec.header.includes('주의')) {
                 return (
-                  <div key={idx} className="p-5 bg-blue-50 rounded-2xl border border-blue-100 w-full">
+                  <div key={idx} className="p-4 md:p-5 bg-blue-50 rounded-2xl border border-blue-100 w-full mb-8 last:mb-0">
                     <h3 className="text-sm font-black text-blue-800 mb-2">{sec.header}</h3>
                     <div className="text-[17px] text-gray-800 font-bold leading-[1.8] whitespace-pre-wrap">{sec.content}</div>
                   </div>
@@ -123,14 +126,14 @@ export const ResultCard: React.FC<ResultCardProps> = ({
                 .trim();
               
               return (
-                <div key={idx} className="bg-white p-5 md:p-6 rounded-3xl border border-gray-100 shadow-sm w-full">
+                <div key={idx} className="w-full mb-8 last:mb-0">
                   <h3 className="text-sm font-black text-blue-600 uppercase tracking-widest mb-3 flex items-center">
                     <span className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center mr-2 text-blue-600 border border-blue-100">
                       {idx + 1}
                     </span>
                     {sec.header}
                   </h3>
-                  <div className="text-[17px] md:text-lg text-gray-800 leading-[1.8] font-bold whitespace-pre-wrap w-full break-keep">
+                  <div className="text-[17px] md:text-lg text-gray-800 leading-[1.8] font-bold whitespace-pre-wrap w-full">
                     {formattedContent}
                   </div>
                 </div>
@@ -149,7 +152,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({
 
     // 3. 파싱 실패 시 일반 텍스트
     const cleanText = text.replace(/\|/g, '').trim();
-    return <div className="text-[17px] md:text-lg font-bold text-gray-800 leading-[1.8] whitespace-pre-wrap w-full break-keep">{cleanText}</div>;
+    return <div className="text-[17px] md:text-lg font-bold text-gray-800 leading-[1.8] whitespace-pre-wrap w-full">{cleanText}</div>;
   };
 
   return (
@@ -167,12 +170,6 @@ export const ResultCard: React.FC<ResultCardProps> = ({
               <span className="px-3 py-1 bg-blue-100 text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-full whitespace-nowrap">
                 {getIntentLabel(answer?.intent || 'freeform')}
               </span>
-              {(answer?.confidence ?? 0) > 0.8 && (
-                <span className="flex items-center space-x-1 px-3 py-1 bg-green-100 text-green-600 text-[10px] font-black uppercase tracking-widest rounded-full whitespace-nowrap">
-                  <ShieldCheck size={12} />
-                  <span>높은 신뢰도</span>
-                </span>
-              )}
             </div>
 
             {/* Bookmark Toggle */}
@@ -182,11 +179,11 @@ export const ResultCard: React.FC<ResultCardProps> = ({
                   e.stopPropagation();
                   onToggleBookmark();
                 }}
-                className={`flex-shrink-0 px-3 py-2 rounded-xl transition-all z-20 flex items-center space-x-1 ${
+                className={`relative flex-shrink-0 px-3 py-2 rounded-xl transition-all z-20 flex items-center space-x-1 ${
                   isBookmarked 
                     ? 'bg-blue-600 text-white shadow-md shadow-blue-200' 
                     : 'bg-white text-gray-400 hover:bg-gray-50 hover:text-gray-600 border border-gray-200'
-                } ${currentStep === 'result_bookmark' ? 'ring-4 ring-blue-500 ring-offset-2 animate-pulse' : ''}`}
+                } ${currentStep === 'result_bookmark' ? 'ring-4 ring-blue-500 ring-offset-2 animate-bounce' : ''}`}
               >
                 <BookmarkIcon size={14} fill={isBookmarked ? "currentColor" : "none"} />
                 <span className="text-[10px] font-black uppercase tracking-widest">
@@ -202,15 +199,10 @@ export const ResultCard: React.FC<ResultCardProps> = ({
         </div>
 
         {/* 2. Main Answer */}
-        <div className="p-5 md:p-8 space-y-6">
+        <div className="p-4 md:p-6 space-y-6">
           <div className="prose prose-blue max-w-none w-full">
-            <div className="flex items-start space-x-3 mb-2">
-              <div className="p-2 bg-blue-600 rounded-xl mt-1 flex-shrink-0">
-                <Target size={20} className="text-white" />
-              </div>
-              <div className="flex-1 min-w-0 w-full">
-                {renderBlogStyle(answer?.user_answer || '')}
-              </div>
+            <div className="w-full">
+              {renderBlogStyle(answer?.user_answer || '')}
             </div>
           </div>
 
@@ -227,22 +219,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({
           )}
         </div>
 
-        {/* 3. Metadata Footer */}
-        <div className="p-6 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
-          <div className="flex items-center space-x-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-            <div className="flex items-center space-x-1">
-              <Info size={12} />
-              <span>신뢰도: {typeof answer?.confidence === 'number' ? (answer.confidence * 100).toFixed(0) : 0}%</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <Lightbulb size={12} />
-              <span>{answer?.reusable ? '재사용 가능 정보' : '일회성 정보'}</span>
-            </div>
-          </div>
-          <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">
-            ID: {answer?.normalized_query || 'unknown'}
-          </p>
-        </div>
+
       </div>
     </motion.div>
   );
