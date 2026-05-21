@@ -18,7 +18,6 @@ export const CategoryArticleView: React.FC<CategoryArticleViewProps> = ({ articl
   const { answer } = article;
   const { currentStep, nextStep } = useTutorial();
 
-  // 마크다운 표 형태의 텍스트를 블로그/카드 스타일로 예쁘게 변환하는 파서
   const renderBlogStyle = (text: string) => {
     if (!text.trim().startsWith('|')) {
       return <div className="text-lg text-gray-700 leading-loose whitespace-pre-wrap">{text}</div>;
@@ -42,8 +41,6 @@ export const CategoryArticleView: React.FC<CategoryArticleViewProps> = ({ articl
               const content = row[colIdx];
               if (!content) return null;
               
-              // 내용이 1. 2. 3. 처럼 숫자 리스트로 되어있는 경우 줄바꿈 처리
-              // 추가로 마크다운의 <br>을 줄바꿈으로, **를 빈 문자열로 치환
               const formattedContent = content
                 .replace(/(\d+\.)/g, '\n$1')
                 .replace(/<br>/gi, '\n')

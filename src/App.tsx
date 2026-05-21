@@ -393,7 +393,7 @@ export default function App() {
         return (
           <div className="space-y-12 pb-32">
             {/* Header with Reset Button */}
-            <div className="flex justify-between items-center px-4 max-w-5xl mx-auto">
+            <div className="flex justify-between items-center px-4 w-full">
               <h2 className="text-xl font-black text-gray-900">대화 내용</h2>
               <button 
                 onClick={handleResetConversation}
@@ -413,7 +413,7 @@ export default function App() {
                   transition={{ duration: 0.4 }}
                 >
                   {msg.role === 'user' ? (
-                    <div className="flex items-start space-x-4 max-w-3xl mx-auto px-4">
+                    <div className="flex items-start space-x-4 w-full px-4">
                       <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
                         <UserIcon className="w-5 h-5 text-blue-600" />
                       </div>
@@ -427,7 +427,7 @@ export default function App() {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-start space-x-4 max-w-5xl mx-auto px-4">
+                    <div className="flex items-start space-x-4 w-full px-4">
                       <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
                         <Bot className="w-5 h-5 text-white" />
                       </div>
@@ -457,9 +457,9 @@ export default function App() {
             )}
 
             {/* Follow-up Input */}
-            {!isLoading && (
-              <div className="fixed bottom-24 left-0 right-0 px-4 z-40 pointer-events-none">
-                <div className="max-w-3xl mx-auto pointer-events-auto">
+            {!isLoading && !isTutorialActive && (
+              <div className="fixed bottom-24 w-full max-w-md mx-auto px-4 z-40 pointer-events-none left-0 right-0">
+                <div className="w-full pointer-events-auto">
                   <div className="bg-white/80 backdrop-blur-md p-4 rounded-3xl shadow-2xl border border-white/20">
                     <SearchInput onSearch={handleSearch} placeholder="추가로 궁금한 점을 물어보세요..." />
                   </div>

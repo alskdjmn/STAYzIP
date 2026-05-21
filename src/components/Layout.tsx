@@ -22,9 +22,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onNavigate,
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-900">
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-900 max-w-md mx-auto shadow-2xl relative overflow-x-hidden border-x border-gray-100">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm px-4 py-3 flex items-center justify-between">
+      <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm px-4 py-3 flex items-center justify-between w-full">
         <div 
           className="flex items-center space-x-2 cursor-pointer" 
           onClick={() => onNavigate('home')}
@@ -41,12 +41,12 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onNavigate,
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-4xl mx-auto w-full pb-24 md:pb-12 px-4 py-6">
+      <main className="flex-1 w-full pb-24 px-4 py-6">
         {children}
       </main>
 
-      {/* Bottom Navigation (Mobile) */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-6 py-3 flex justify-between items-center md:hidden z-50">
+      {/* Bottom Navigation */}
+      <nav className="fixed bottom-0 w-full max-w-md mx-auto bg-white border-t border-gray-100 px-6 py-3 flex justify-between items-center z-50 shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -65,16 +65,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onNavigate,
         })}
       </nav>
 
-      {/* Footer (Desktop) */}
-      <footer className="hidden md:block bg-white border-t border-gray-100 py-12 px-4 mt-auto">
-        <div className="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center">
-          <div className="flex items-center space-x-2 mb-4 md:mb-0">
-            <img src="/logo.png" alt="STAYZIP Logo" className="w-6 h-6 rounded object-cover" />
-            <span className="text-lg font-black text-blue-600 tracking-tight">STAYZIP</span>
-          </div>
-          <p className="text-sm text-gray-400">© 2026 STAYZIP. 1인 가구를 위한 생활 도우미.</p>
-        </div>
-      </footer>
+      {/* Footer is removed to maintain strict mobile aspect ratio */}
     </div>
   );
 };

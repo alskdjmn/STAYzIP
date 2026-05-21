@@ -42,6 +42,116 @@ export const ResultCard: React.FC<ResultCardProps> = ({
     return labels[intent] || intent;
   };
 
+  const renderBlogStyle = (text: string) => {
+    if (!text) return <p className="text-[17px] font-bold text-gray-800 leading-loose">답변을 생성할 수 없습니다.</p>;
+
+    let beforeText = '';
+    let sections: { header: string; content: string }[] = [];
+    let afterText = '';
+
+    // 1. 테이블 파싱 (기존 카테고리/히스토리 데이터)
+    const tableStartIndex = text.indexOf('|');
+    if (tableStartIndex !== -1 && text.includes('|---|')) {
+      beforeText = text.substring(0, tableStartIndex).trim();
+      let remaining = text.substring(tableStartIndex);
+      const lastPipeIndex = remaining.lastIndexOf('|');
+      
+      let tableText = remaining;
+      if (lastPipeIndex !== -1) {
+        tableText = remaining.substring(0, lastPipeIndex + 1);
+        afterText = remaining.substring(lastPipeIndex + 1).trim();
+      }
+
+      let cleaned = tableText.trim();
+      if (cleaned.startsWith('|')) cleaned = cleaned.substring(1);
+      if (cleaned.endsWith('|')) cleaned = cleaned.substring(0, cleaned.length - 1);
+      
+      const rowsRaw = cleaned.split(/\|\s*\n\s*\|/);
+      if (rowsRaw.length >= 3) {
+        const headers = rowsRaw[0].split('|').map(s => s.trim().replace(/\|$/, '').trim());
+        const dataRows = rowsRaw.slice(2).map(rowStr => rowStr.split('|').map(s => s.trim().replace(/\|$/, '').trim()));
+
+        // 컬럼별로 데이터 합치기 (조리법 1, 2, 3이 각기 다른 행에 있어도 하나의 섹션으로 합침)
+        sections = headers.map((header, colIdx) => {
+          const contents = dataRows.map(row => row[colIdx]).filter(Boolean);
+          return {
+            header,
+            content: contents.join('\n')
+          };
+        });
+      }
+    } 
+    // 2. 대괄호 [제목] 파싱 (AI 최신 포맷)
+    else if (text.includes('[') && text.includes(']')) {
+      const parts = text.split(/\[(.*?)\]/);
+      if (parts.length > 2) {
+        beforeText = parts[0].trim();
+        for (let i = 1; i < parts.length; i += 2) {
+          if (parts[i].trim()) {
+            sections.push({
+              header: parts[i].trim(),
+              content: (parts[i + 1] ? parts[i + 1].trim() : '').replace(/\|/g, '')
+            });
+          }
+        }
+      }
+    }
+
+    // 파싱된 섹션이 있다면 렌더링
+    if (sections.length > 0) {
+      return (
+        <div className="space-y-6 w-full">
+          {beforeText && <div className="text-[17px] font-bold text-gray-800 leading-[1.8] whitespace-pre-wrap">{beforeText}</div>}
+          
+          <div className="space-y-6 w-full">
+            {sections.map((sec, idx) => {
+              // 사물함이나 주의사항 등은 다른 스타일
+              if (sec.header.includes('사물함') || sec.header.includes('주의')) {
+                return (
+                  <div key={idx} className="p-5 bg-blue-50 rounded-2xl border border-blue-100 w-full">
+                    <h3 className="text-sm font-black text-blue-800 mb-2">{sec.header}</h3>
+                    <div className="text-[17px] text-gray-800 font-bold leading-[1.8] whitespace-pre-wrap">{sec.content}</div>
+                  </div>
+                );
+              }
+
+              // 재료 따로, 조리법 따로 완전히 독립된 카드로 분리
+              let formattedContent = sec.content
+                .replace(/(\d+[\)\.])\s/g, '\n$1 ')
+                .replace(/<br>/gi, '\n')
+                .replace(/\*\*/g, '')
+                .trim();
+              
+              return (
+                <div key={idx} className="bg-white p-5 md:p-6 rounded-3xl border border-gray-100 shadow-sm w-full">
+                  <h3 className="text-sm font-black text-blue-600 uppercase tracking-widest mb-3 flex items-center">
+                    <span className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center mr-2 text-blue-600 border border-blue-100">
+                      {idx + 1}
+                    </span>
+                    {sec.header}
+                  </h3>
+                  <div className="text-[17px] md:text-lg text-gray-800 leading-[1.8] font-bold whitespace-pre-wrap w-full break-keep">
+                    {formattedContent}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {afterText && (
+            <div className="mt-6 bg-blue-50 p-5 rounded-2xl border border-blue-100">
+              <div className="text-[17px] font-bold text-gray-800 leading-[1.8] whitespace-pre-wrap">{afterText}</div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // 3. 파싱 실패 시 일반 텍스트
+    const cleanText = text.replace(/\|/g, '').trim();
+    return <div className="text-[17px] md:text-lg font-bold text-gray-800 leading-[1.8] whitespace-pre-wrap w-full break-keep">{cleanText}</div>;
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -50,57 +160,56 @@ export const ResultCard: React.FC<ResultCardProps> = ({
       className="space-y-6"
     >
       <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden relative">
-        {/* Bookmark Toggle */}
-        {onToggleBookmark && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleBookmark();
-            }}
-            className={`absolute top-6 right-6 p-3 rounded-2xl transition-all z-20 flex items-center space-x-2 ${
-              isBookmarked 
-                ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' 
-                : 'bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-600'
-            } ${currentStep === 'result_bookmark' ? 'ring-4 ring-blue-500 ring-offset-2 animate-pulse' : ''}`}
-          >
-            <BookmarkIcon size={20} fill={isBookmarked ? "currentColor" : "none"} />
-            <span className="text-xs font-black uppercase tracking-widest">
-              {isBookmarked ? '저장됨' : '저장'}
-            </span>
-          </button>
-        )}
-
-        {/* 1. Header with Intent & Summary */}
-        <div className="p-8 border-b border-gray-50 bg-gray-50/30">
-          <div className="flex flex-col items-start">
-            <div className="flex items-center space-x-2 mb-4">
-              <span className="px-3 py-1 bg-blue-100 text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-full">
+        {/* Header with Intent & Summary and Bookmark */}
+        <div className="p-6 md:p-8 border-b border-gray-50 bg-gray-50/30">
+          <div className="flex justify-between items-start mb-4">
+            <div className="flex flex-wrap items-center gap-2 pr-2">
+              <span className="px-3 py-1 bg-blue-100 text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-full whitespace-nowrap">
                 {getIntentLabel(answer?.intent || 'freeform')}
               </span>
               {(answer?.confidence ?? 0) > 0.8 && (
-                <span className="flex items-center space-x-1 px-3 py-1 bg-green-100 text-green-600 text-[10px] font-black uppercase tracking-widest rounded-full">
+                <span className="flex items-center space-x-1 px-3 py-1 bg-green-100 text-green-600 text-[10px] font-black uppercase tracking-widest rounded-full whitespace-nowrap">
                   <ShieldCheck size={12} />
                   <span>높은 신뢰도</span>
                 </span>
               )}
             </div>
-            <h1 className="text-2xl font-black text-gray-900 leading-tight">
-              {answer?.answer_summary || '답변'}
-            </h1>
+
+            {/* Bookmark Toggle */}
+            {onToggleBookmark && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleBookmark();
+                }}
+                className={`flex-shrink-0 px-3 py-2 rounded-xl transition-all z-20 flex items-center space-x-1 ${
+                  isBookmarked 
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-200' 
+                    : 'bg-white text-gray-400 hover:bg-gray-50 hover:text-gray-600 border border-gray-200'
+                } ${currentStep === 'result_bookmark' ? 'ring-4 ring-blue-500 ring-offset-2 animate-pulse' : ''}`}
+              >
+                <BookmarkIcon size={14} fill={isBookmarked ? "currentColor" : "none"} />
+                <span className="text-[10px] font-black uppercase tracking-widest">
+                  {isBookmarked ? '저장됨' : '저장'}
+                </span>
+              </button>
+            )}
           </div>
+          
+          <h1 className="text-xl md:text-2xl font-black text-gray-900 leading-tight">
+            {answer?.answer_summary || '답변'}
+          </h1>
         </div>
 
         {/* 2. Main Answer */}
-        <div className="p-8 space-y-8">
-          <div className="prose prose-blue max-w-none">
-            <div className="flex items-start space-x-3 mb-4">
-              <div className="p-2 bg-blue-600 rounded-xl mt-1">
+        <div className="p-5 md:p-8 space-y-6">
+          <div className="prose prose-blue max-w-none w-full">
+            <div className="flex items-start space-x-3 mb-2">
+              <div className="p-2 bg-blue-600 rounded-xl mt-1 flex-shrink-0">
                 <Target size={20} className="text-white" />
               </div>
-              <div className="flex-1">
-                <p className="text-xl font-bold text-gray-800 leading-relaxed whitespace-pre-wrap">
-                  {answer?.user_answer || '답변을 생성할 수 없습니다.'}
-                </p>
+              <div className="flex-1 min-w-0 w-full">
+                {renderBlogStyle(answer?.user_answer || '')}
               </div>
             </div>
           </div>

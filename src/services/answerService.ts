@@ -38,16 +38,7 @@ const findLocalMatch = (question: string): HomeAssistAnswer | null => {
  * FINAL PIPELINE
  */
 export const getAnswer = async (question: string, inventory: InventoryItem[], history: ChatMessage[], image?: string): Promise<HomeAssistAnswer> => {
-  // 1. Try Local Match FIRST (only if there's no image)
-  if (!image) {
-    const localAnswer = findLocalMatch(question);
-    if (localAnswer) {
-      console.log(`[Local Match] Question: ${question}`);
-      return { ...localAnswer };
-    }
-  }
-
-  // 2. LLM Fallback
+  // 1. LLM Only (always use Gemini API based on inventory)
   console.log(`[Gemini Call] Question: ${question}${image ? ' [with Image attached]' : ''}`);
   const aiAnswer = await generateAnswer(question, inventory, history, image);
   
