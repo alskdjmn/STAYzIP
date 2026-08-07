@@ -15,7 +15,7 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onNavigate, onToggleUtility }) => {
-  const { currentStep } = useTutorial();
+  const { currentStep, nextStep } = useTutorial();
   const navItems = [
     { id: 'home', label: '홈', icon: Home },
     { id: 'category', label: '카테고리', icon: Search },
@@ -55,7 +55,13 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onNavigate,
           return (
             <button
               key={item.id}
-              onClick={() => onNavigate(item.id)}
+              onClick={() => {
+                onNavigate(item.id);
+                // 튜토리얼 진행 (카테고리 탭 클릭 시)
+                if (item.id === 'category' && (currentStep === 'read_bookmark' || currentStep === 'category_tab')) {
+                  nextStep();
+                }
+              }}
               className={`relative flex flex-col items-center space-y-1 transition-colors ${
                 isActive ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
               }`}

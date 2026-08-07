@@ -267,9 +267,15 @@ export default function App() {
     setActiveTab('result');
     window.location.hash = 'result';
     window.scrollTo(0, 0);
+
+    // 튜토리얼이 '마이페이지 북마크' 단계일 때 북마크를 눌러보면 자동으로 다음(카테고리) 단계로 넘김
+    if (currentStep === 'mypage_bookmark') {
+      nextStep();
+    }
   };
 
   const handleSearch = async (query: string, image?: string) => {
+    if (isLoading) return; // 이미 생성 중일 경우 중복 방지 (오류 원천 차단)
     if (!query.trim() && !image) return;
     
     const userMessage: ChatMessage = {
@@ -379,6 +385,7 @@ export default function App() {
               window.location.hash = `category?id=${id}`;
             }} 
             onSelectRule={handleSelectRule}
+            isLoading={isLoading}
           />
         );
       case 'category':
@@ -500,7 +507,7 @@ export default function App() {
               <div className="fixed bottom-24 w-full max-w-lg mx-auto px-4 z-40 pointer-events-none left-0 right-0">
                 <div className="w-full pointer-events-auto">
                   <div className="bg-white/80 backdrop-blur-md p-4 rounded-3xl shadow-2xl border border-white/20">
-                    <SearchInput onSearch={handleSearch} placeholder="궁금한 점을 물어보세요..." />
+                    <SearchInput onSearch={handleSearch} placeholder="궁금한 점을 물어보세요..." isLoading={isLoading} />
                   </div>
                 </div>
               </div>

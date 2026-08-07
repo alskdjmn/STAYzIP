@@ -37,7 +37,7 @@ export const compressImage = (
       }
 
       ctx.drawImage(img, 0, 0, width, height);
-      resolve(canvas.toDataURL('image/jpeg', quality));
+      resolve(canvas.toDataURL('image/webp', quality));
     };
 
     img.onerror = (err) => reject(err);

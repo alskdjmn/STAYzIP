@@ -12,9 +12,10 @@ interface HomePageProps {
   onSearch: (query: string) => void;
   onSelectCategory: (id: string) => void;
   onSelectRule: (rule: HomeAssistRule) => void;
+  isLoading?: boolean;
 }
 
-export const HomePage: React.FC<HomePageProps> = ({ onSearch, onSelectCategory, onSelectRule }) => {
+export const HomePage: React.FC<HomePageProps> = ({ onSearch, onSelectCategory, onSelectRule, isLoading }) => {
   return (
     <div 
       className="flex flex-col items-center justify-center min-h-[60vh] space-y-12 w-full rounded-[3rem] p-6"
@@ -38,7 +39,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onSearch, onSelectCategory, 
           </p>
         </motion.div>
 
-        <SearchInput onSearch={onSearch} />
+        <SearchInput onSearch={onSearch} isLoading={isLoading} />
       </section>
     </div>
   );

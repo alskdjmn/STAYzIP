@@ -4,10 +4,19 @@ exports.generateAnswer = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
 const genai_1 = require("@google/genai");
+const admin = require("firebase-admin");
+// Firebase Admin 초기화
+admin.initializeApp();
+const db = admin.firestore();
 // Initialize Gemini with the API key from environment variables
 const apiKey = process.env.GEMINI_API_KEY || "";
-const ai = apiKey ? new genai_1.GoogleGenAI({ apiKey }) : null;
-const DEFAULT_MODEL = "gemini-3.1-flash-lite";
+const ai = apiKey ? new genai_1.GoogleGenAI({ apiKey, httpOptions: { apiVersion: 'v1beta' } }) : null;
+const DEFAULT_MODEL = "gemini-2.5-flash";
+// ─── Rate Limit 설정 ───────────────────────────────────────────
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1분
+const MAX_REQUESTS_PER_MINUTE = 5; // 유저당 분당 최대 5회
+const MAX_REQUESTS_PER_DAY = 50; // 유저당 하루 최대 50회
+// ──────────────────────────────────────────────────────────────
 const SYSTEM_INSTRUCTION = `1인가구 생활비서 AI. JSON만 반환. 마크다운·부연설명 금지.
 
 
@@ -40,12 +49,46 @@ intent: faq|recommendation|plan|summary|search|calculation|freeform
 user_answer: 위 형식 준수
 answer_summary: 한줄요약
 tags: 2~5개 키워드 배열`;
+/**
+ * 유저별 Rate Limit 검사 (Firestore 기반)
+ * - 분당 MAX_REQUESTS_PER_MINUTE 초과 시 차단
+ * - 일당 MAX_REQUESTS_PER_DAY 초과 시 차단
+ */
+async function checkRateLimit(uid) {
+    const now = Date.now();
+    const todayKey = new Date().toISOString().slice(0, 10); // "2026-05-22"
+    const rateLimitRef = db.collection('rateLimits').doc(uid);
+    await db.runTransaction(async (tx) => {
+        const doc = await tx.get(rateLimitRef);
+        const data = doc.exists ? doc.data() : {};
+        // ── 분당 제한 체크 ──
+        const recentTimestamps = (data.timestamps || []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+        if (recentTimestamps.length >= MAX_REQUESTS_PER_MINUTE) {
+            throw new https_1.HttpsError("resource-exhausted", `요청이 너무 빠릅니다. 1분에 최대 ${MAX_REQUESTS_PER_MINUTE}회만 질문할 수 있습니다. 잠시 후 다시 시도해주세요.`);
+        }
+        // ── 일일 제한 체크 ──
+        const dailyCount = data.dailyDate === todayKey ? (data.dailyCount || 0) : 0;
+        if (dailyCount >= MAX_REQUESTS_PER_DAY) {
+            throw new https_1.HttpsError("resource-exhausted", `오늘 하루 질문 한도(${MAX_REQUESTS_PER_DAY}회)에 도달했습니다. 내일 다시 이용해주세요.`);
+        }
+        // ── 카운터 업데이트 ──
+        tx.set(rateLimitRef, {
+            timestamps: [...recentTimestamps, now],
+            dailyDate: todayKey,
+            dailyCount: dailyCount + 1,
+            lastRequest: now,
+        });
+    });
+}
 exports.generateAnswer = (0, https_1.onCall)({ cors: true, region: "asia-northeast3" }, async (request) => {
     var _a;
     // Authentication check (Security Fix)
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "로그인이 필요합니다. 비정상적인 접근입니다.");
     }
+    const uid = request.auth.uid;
+    // ── Rate Limit 검사 ──
+    await checkRateLimit(uid);
     const data = request.data;
     const question = data.question;
     const inventory = data.inventory || [];
@@ -114,12 +157,15 @@ exports.generateAnswer = (0, https_1.onCall)({ cors: true, region: "asia-northea
         return JSON.parse(cleanJson);
     }
     catch (error) {
+        // Rate limit 에러는 그대로 throw (HttpsError)
+        if (error instanceof https_1.HttpsError)
+            throw error;
         logger.error("Gemini API Error:", error);
         const isQuotaError = ((_a = error === null || error === void 0 ? void 0 : error.message) === null || _a === void 0 ? void 0 : _a.includes("429")) || (error === null || error === void 0 ? void 0 : error.status) === "RESOURCE_EXHAUSTED";
         return {
             intent: 'freeform',
             user_answer: isQuotaError
-                ? '잠시 후 다시 시도해주세요. 단기간에 너무 많은 요청(1분에 15회 초과)이 발생했거나 일일 무료 한도가 소진되었습니다.'
+                ? '잠시 후 다시 시도해주세요. 단기간에 너무 많은 요청이 발생했거나 일일 무료 한도가 소진되었습니다.'
                 : '죄송합니다. 서버에서 답변 생성 중 문제가 발생했습니다.',
             answer_summary: '서비스 오류',
             tags: ['오류']

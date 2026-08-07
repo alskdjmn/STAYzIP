@@ -13,9 +13,10 @@ interface SearchInputProps {
   onSearch: (query: string, image?: string) => void;
   placeholder?: string;
   initialValue?: string;
+  isLoading?: boolean;
 }
 
-export const SearchInput: React.FC<SearchInputProps> = ({ onSearch, placeholder, initialValue = '' }) => {
+export const SearchInput: React.FC<SearchInputProps> = ({ onSearch, placeholder, initialValue = '', isLoading = false }) => {
   const [query, setQuery] = useState(initialValue);
   const [image, setImage] = useState<string | null>(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -125,10 +126,10 @@ export const SearchInput: React.FC<SearchInputProps> = ({ onSearch, placeholder,
             />
             <button
               type="submit"
-              disabled={!query.trim() && !image}
+              disabled={(!query.trim() && !image) || isLoading}
               className={`relative bg-blue-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${currentStep === 'home_ask' ? 'ring-4 ring-blue-500 ring-offset-2 animate-bounce z-50' : ''}`}
             >
-              질문
+              {isLoading ? '생성 중...' : '질문'}
             </button>
           </div>
         </div>

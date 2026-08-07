@@ -67,7 +67,7 @@ export const CameraModal: React.FC<CameraModalProps> = ({ onClose, onCapture }) 
       const ctx = canvas.getContext('2d');
       if (ctx) {
         ctx.drawImage(video, 0, 0, width, height);
-        const imageUrl = canvas.toDataURL('image/jpeg', 0.8);
+        const imageUrl = canvas.toDataURL('image/webp', 0.8);
         setCapturedImage(imageUrl);
         stopCamera();
       }

@@ -139,16 +139,7 @@ export const MyPage: React.FC<MyPageProps> = ({
           </div>
         )}
 
-        {currentStep === 'mypage_bookmark' && (
-          <div className="relative">
-            <button
-              onClick={() => nextStep()}
-              className="w-full mt-6 py-4 bg-blue-600 text-white rounded-2xl font-black text-lg hover:bg-blue-700 transition-all shadow-xl animate-bounce"
-            >
-              다음 단계로 👉
-            </button>
-          </div>
-        )}
+
       </section>
     </div>
   );

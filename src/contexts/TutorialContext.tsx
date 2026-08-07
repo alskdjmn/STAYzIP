@@ -17,6 +17,7 @@ export type TutorialStep =
   | 'result_bookmark'
   | 'result_reset'
   | 'mypage_bookmark'
+  | 'read_bookmark'
   | 'category_tab'
   | 'category_article'
   | 'category_article_view'
@@ -59,6 +60,7 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const skipTutorial = () => {
     localStorage.setItem('stayzip_tutorial_finished', 'true');
     setCurrentStep('none');
+    window.location.hash = 'home';
   };
 
   const startTutorial = () => {
@@ -74,7 +76,8 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         case 'home_ask': return 'result_bookmark'; // Will wait for result before showing
         case 'result_bookmark': return 'result_reset';
         case 'result_reset': return 'mypage_bookmark';
-        case 'mypage_bookmark': return 'category_tab';
+        case 'mypage_bookmark': return 'read_bookmark';
+        case 'read_bookmark': return 'category_tab';
         case 'category_tab': return 'category_article';
         case 'category_article': return 'category_article_view';
         case 'category_article_view': 
@@ -159,7 +162,8 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                     {currentStep === 'home_ask' && '예시 질문이 준비되었습니다! 우측의 "질문" 버튼을 눌러보세요.'}
                     {currentStep === 'result_bookmark' && '자취 비서의 답변이 완료되었습니다! 유용한 정보라면 우측 상단의 "저장" 버튼을 눌러 북마크 해보세요.'}
                     {currentStep === 'result_reset' && '다른 질문을 새롭게 시작하고 싶다면 화면 상단의 "대화 리셋" 버튼을 누르세요.'}
-                    {currentStep === 'mypage_bookmark' && '마이페이지에서는 방금 전 저장한 북마크된 답변들을 모아볼 수 있습니다!'}
+                    {currentStep === 'mypage_bookmark' && '마이페이지에서는 방금 전 저장한 북마크된 답변들을 모아볼 수 있습니다! 답변을 하나 클릭해서 열어보세요.'}
+                    {currentStep === 'read_bookmark' && '저장했던 답변을 다시 불러왔습니다! 내용을 확인하셨다면 이제 하단의 "카테고리" 탭을 눌러보세요.'}
                     {currentStep === 'category_tab' && '하단의 카테고리 탭입니다! 여기서 다양한 주제의 유용한 정보들을 찾아볼 수 있습니다. 아무 카테고리나 하나 눌러보세요.'}
                     {currentStep === 'category_article' && '해당 카테고리의 답변(아티클) 중 하나를 선택하면 바로 자세한 내용을 볼 수 있습니다! 아무 아티클이나 클릭해보세요.'}
                     {currentStep === 'category_article_view' && '이렇게 전문가 수준의 정보와 AI의 답변을 확인할 수 있습니다! 튜토리얼을 성공적으로 마쳤습니다.'}
@@ -189,7 +193,10 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 이제 STAYZIP을 자유롭게 사용해보세요.
               </p>
               <button 
-                onClick={() => setCurrentStep('none')}
+                onClick={() => {
+                  setCurrentStep('none');
+                  window.location.hash = 'home';
+                }}
                 className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors"
               >
                 시작하기
