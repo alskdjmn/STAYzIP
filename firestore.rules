@@ -91,7 +91,11 @@ service cloud.firestore {
       // 누구나 방 코드를 통해 방 존재 여부는 확인 가능하도록 읽기 일부 허용 (where 쿼리 사용)
       allow read: if isAuthenticated();
       allow create: if isAuthenticated() && isValidRoom(request.resource.data) && request.resource.data.createdBy == request.auth.uid;
-      allow update: if isAuthenticated(); // 방 멤버 참여/나가기 로직용
+      allow update: if isRoomMember(roomId) || // 기존 멤버는 방 수정 가능
+                       (isAuthenticated() && // 비멤버는 자신의 UID를 members에 추가(참여)하는 것만 허용
+                        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']) &&
+                        request.resource.data.members.toSet().difference(resource.data.members.toSet()).hasOnly([request.auth.uid]) &&
+                        resource.data.members.size() < request.resource.data.members.size());
       allow delete: if isRoomMember(roomId); // 마지막 인원이 나갈 때 방 삭제 허용
 
       match /inventory/{itemId} {

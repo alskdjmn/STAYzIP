@@ -161,8 +161,7 @@ export default function App() {
       
     const unsubscribe = onSnapshot(inventoryRef, (snapshot) => {
       const items = snapshot.docs.map(doc => doc.data() as InventoryItem);
-      // Sort by recency to maintain stable UI
-      setInventoryItems(items.sort((a,b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime()));
+      setInventoryItems(items);
     }, (error) => {
       console.error('Firestore Error (Inventory):', error);
     });
@@ -188,7 +187,7 @@ export default function App() {
   const handleAddInventoryItem = async (name: string, category: InventoryCategory) => {
     if (!user) return;
 
-    const itemId = Math.random().toString(36).substr(2, 9);
+    const itemId = crypto.randomUUID();
     const newItem: InventoryItem = {
       id: itemId,
       name,
@@ -230,7 +229,7 @@ export default function App() {
         const bookmarkRef = doc(db, 'users', user.uid, 'bookmarks', existingBookmark.id);
         await deleteDoc(bookmarkRef);
       } else {
-        const bookmarkId = Math.random().toString(36).substr(2, 9);
+        const bookmarkId = crypto.randomUUID();
         const newBookmark: Bookmark = {
           id: bookmarkId,
           userId: user.uid,
@@ -434,7 +433,7 @@ export default function App() {
 
             <AnimatePresence mode="popLayout">
               {conversationHistory && conversationHistory.length > 0 && conversationHistory.map((msg, idx) => (
-                <div key={idx} className="w-full">
+                <div key={`${msg.timestamp}-${msg.role}-${idx}`} className="w-full">
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}

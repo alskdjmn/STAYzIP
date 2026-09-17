@@ -68,7 +68,7 @@ export const Inventory: React.FC<InventoryProps> = ({ items, onAddItem, onRemove
 
       <div className="space-y-6">
         {categories.map((cat) => {
-          const catItems = (items || []).filter((item) => item.category === cat);
+          const catItems = (items || []).filter((item) => item.category === cat).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
           return (
             <div key={cat} className="space-y-3">
               <h3 className="text-sm font-black text-gray-900 flex items-center space-x-2">
@@ -79,23 +79,18 @@ export const Inventory: React.FC<InventoryProps> = ({ items, onAddItem, onRemove
               {catItems.length === 0 ? (
                 <p className="text-xs text-gray-400 italic py-2">등록된 품목이 없습니다.</p>
               ) : (
-                <div className="grid grid-cols-1 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   {catItems.map((item) => (
                     <div
                       key={item.id}
-                      className="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-100 shadow-sm"
+                      className="flex flex-col items-center justify-between bg-white p-2 rounded-lg border border-gray-100 shadow-sm text-center gap-1"
                     >
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium text-gray-700">{item.name}</span>
-                        {item.addedBy && (
-                          <span className="text-[10px] text-gray-400 mt-0.5">{item.addedBy}님이 등록함</span>
-                        )}
-                      </div>
+                      <span className="text-xs font-medium text-gray-700 break-all leading-tight">{item.name}</span>
                       <button
                         onClick={() => onRemoveItem(item.id)}
-                        className="text-gray-300 hover:text-red-500 transition-colors"
+                        className="text-gray-300 hover:text-red-500 transition-colors mt-0.5"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   ))}

@@ -3,15 +3,29 @@ import * as logger from "firebase-functions/logger";
 import { GoogleGenAI, Type } from "@google/genai";
 import * as admin from "firebase-admin";
 
-// Firebase Admin 초기화
-admin.initializeApp();
-const db = admin.firestore();
+// Firebase Admin 초기화 (lazy — CLI 분석 타임아웃 방지)
+let _adminApp: admin.app.App | null = null;
+let _db: admin.firestore.Firestore | null = null;
 
-// Initialize Gemini with the API key from environment variables
-const apiKey = process.env.GEMINI_API_KEY || "";
-const ai = apiKey ? new GoogleGenAI({ apiKey, httpOptions: { apiVersion: 'v1beta' } }) : null;
+function getDb(): admin.firestore.Firestore {
+  if (!_db) {
+    if (!_adminApp) _adminApp = admin.initializeApp();
+    _db = admin.firestore();
+  }
+  return _db;
+}
 
+// Lazily initialize Gemini inside the handler to avoid deployment timeout
+// (env vars may not be available at module load time)
 const DEFAULT_MODEL = "gemini-2.5-flash";
+
+function getAI(): GoogleGenAI {
+  const apiKey = process.env.GEMINI_API_KEY || "";
+  if (!apiKey) {
+    throw new HttpsError("internal", "서버 설정 오류: API 키가 누락되었습니다.");
+  }
+  return new GoogleGenAI({ apiKey, httpOptions: { apiVersion: 'v1beta' } });
+}
 
 // ─── Rate Limit 설정 ───────────────────────────────────────────
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1분
@@ -19,31 +33,35 @@ const MAX_REQUESTS_PER_MINUTE = 5;       // 유저당 분당 최대 5회
 const MAX_REQUESTS_PER_DAY = 50;         // 유저당 하루 최대 50회
 // ──────────────────────────────────────────────────────────────
 
-const SYSTEM_INSTRUCTION = `1인가구 생활비서 AI. JSON만 반환. 마크다운·부연설명 금지.
+const SYSTEM_INSTRUCTION = `1인가구 생활비서 AI. JSON만 반환. 마크다운 금지.
 
-
-[규칙]
-- 이미지: 보이는 것만 설명. 불확실하면 보수적 판단
-- 안전: 위험 상황 시에만 경고할 것. 단, 질문과 전혀 무관한 아이템에 대해 굳이 끌어와서 안전 경고를 하지 마세요.
-- 인벤토리 활용: 질문과 관련된 카테고리의 아이템만 활용하세요. 요리 레시피 질문에는 '냉장고' 카테고리만 참고하고, '청소용품'이나 '기타' 카테고리에 있는 화학물질/세제 등은 아예 없는 취급하세요. "락스는 음식에 넣지 마세요" 같은 불필요하고 당연한 경고는 절대 금지합니다.
-- 판단순서: 사진에서 확실한 것 → 관련된 인벤토리 항목 → 현실적 대안
+[핵심 원칙]
+- 존댓말로 작성하세요.
+- 서론·인사말·마무리 인사 금지. 바로 핵심 내용부터 시작하세요.
+- 핵심 내용, 구체적인 방법, 수단은 빠짐없이 설명하세요.
+- 불필요한 수식어, 중복 표현, 당연한 내용은 제거하세요.
+- "~것이 중요합니다", "~하시는 것을 권장합니다", "~에 도움이 됩니다" 같은 형식적 표현 금지.
+- 이미지: 보이는 것만 설명. 불확실하면 보수적으로 판단.
+- 안전 경고: 질문과 직접 관련된 경우에만. 무관한 아이템 끌어오기 금지.
+- 인벤토리: 질문과 관련된 카테고리만 참고. 요리 질문엔 냉장고만.
 
 [답변 형식 - user_answer]
-- 문장 중간에 불필요한 줄바꿈을 넣지 말고 텍스트가 자연스럽게 화면 끝까지 채워지도록(자동 줄바꿈되도록) 긴 문장으로 작성하세요.
-- 각 절차나 문단이 끝날 때만 한 번씩 줄바꿈을 하세요.
-- 칸(표, 테이블, |---| 등)은 절대 나누지 마세요. '|' 문자는 절대 사용 금지.
-- 제목이나 구분이 필요할 때는 반드시 대괄호([제목])를 사용하고, 절차는 1), 2), 3) 숫자로 시작하여 문단으로 나누세요.
+- 존댓말(~합니다, ~하세요, ~됩니다)로 작성.
+- 줄바꿈은 절차/섹션 끝에만. 문장 중간 줄바꿈 금지.
+- '|' 문자 절대 사용 금지.
+- 제목 구분은 대괄호([제목]), 절차는 1), 2), 3) 숫자.
+- 각 항목은 핵심 내용을 2~3문장으로 구체적으로 설명하세요.
 
-예시 형식:
+예시:
 [준비물]
 면 1인분, 소스, 물, 올리브유
 
 [조리법]
-1) 팬에 올리브유를 두릅니다.
-2) 물과 소스를 넣습니다.
-3) 면을 넣고 끓입니다.
+1) 팬에 올리브유를 두르고 중불로 달군 뒤 물과 소스를 붓습니다.
+2) 소스가 끓으면 면을 넣고 3분간 저으며 익힙니다.
+3) 면이 소스를 흡수하면 불을 끄고 바로 담아냅니다.
 
-[내 사물함 기준] (인벤토리 활용 가능할 때만 작성)
+[내 사물함 기준] (인벤토리 활용 가능할 때만)
 (내용)
 
 [스키마]
@@ -60,9 +78,9 @@ tags: 2~5개 키워드 배열`;
 async function checkRateLimit(uid: string): Promise<void> {
   const now = Date.now();
   const todayKey = new Date().toISOString().slice(0, 10); // "2026-05-22"
-  const rateLimitRef = db.collection('rateLimits').doc(uid);
+  const rateLimitRef = getDb().collection('rateLimits').doc(uid);
 
-  await db.runTransaction(async (tx) => {
+  await getDb().runTransaction(async (tx: admin.firestore.Transaction) => {
     const doc = await tx.get(rateLimitRef);
     const data = doc.exists ? doc.data()! : {};
 
@@ -117,10 +135,7 @@ export const generateAnswer = onCall({ cors: true, region: "asia-northeast3" }, 
     throw new HttpsError("invalid-argument", "질문이 비어있습니다.");
   }
 
-  if (!ai) {
-    logger.error("GEMINI_API_KEY is missing in backend environment variables.");
-    throw new HttpsError("internal", "서버 설정 오류: API 키가 누락되었습니다.");
-  }
+  const ai = getAI(); // lazy initialization
 
   const historyText = history
     .slice(-2)

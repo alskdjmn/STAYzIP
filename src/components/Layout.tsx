@@ -36,7 +36,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onNavigate,
         </div>
         <button 
           onClick={onToggleUtility}
-          className="p-2 text-gray-500 hover:text-gray-900 transition-colors hidden md:block"
+          className="p-2 text-gray-500 hover:text-gray-900 transition-colors"
         >
           <Menu className="h-6 w-6" />
         </button>

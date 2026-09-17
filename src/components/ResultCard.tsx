@@ -5,8 +5,7 @@
 
 import React from 'react';
 import { HomeAssistAnswer } from '../types';
-import { SectionTitle } from './Common';
-import { Info, Lightbulb, Bookmark as BookmarkIcon, Tag, Target, ShieldCheck } from 'lucide-react';
+import { Bookmark as BookmarkIcon, Tag } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTutorial } from '../contexts/TutorialContext';
 
@@ -127,13 +126,11 @@ export const ResultCard: React.FC<ResultCardProps> = ({
               
               return (
                 <div key={idx} className="w-full mb-8 last:mb-0">
-                  <h3 className="text-sm font-black text-blue-600 uppercase tracking-widest mb-3 flex items-center">
-                    <span className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center mr-2 text-blue-600 border border-blue-100">
-                      {idx + 1}
-                    </span>
+                  <h3 className="text-xs font-black text-blue-600 uppercase tracking-widest mb-3 flex items-center">
+                    <span className="w-2 h-2 rounded-full bg-blue-500 mr-2 flex-shrink-0" />
                     {sec.header}
                   </h3>
-                  <div className="text-[17px] md:text-lg text-gray-800 leading-[1.8] font-bold whitespace-pre-wrap w-full">
+                  <div className="text-[16px] md:text-lg text-gray-800 leading-[1.8] font-medium whitespace-pre-wrap w-full">
                     {formattedContent}
                   </div>
                 </div>
@@ -150,9 +147,57 @@ export const ResultCard: React.FC<ResultCardProps> = ({
       );
     }
 
-    // 3. 파싱 실패 시 일반 텍스트
-    const cleanText = text.replace(/\|/g, '').trim();
-    return <div className="text-[17px] md:text-lg font-bold text-gray-800 leading-[1.8] whitespace-pre-wrap w-full">{cleanText}</div>;
+    // 3. 파싱 실패 시 일반 텍스트 — 번호 항목을 조리법 스타일 카드로 분리
+    const rawClean = text.replace(/\|/g, '').trim();
+
+    // 번호 항목 분리: "1)" 또는 "1." 패턴 기준으로 split
+    const splitItems = rawClean.split(/(?=\d+[)\.]\s)/).filter(s => s.trim());
+
+    // 첫 번째가 번호로 시작하지 않으면 인트로 텍스트
+    const firstIsNumbered = /^\d+[)\.]\s/.test(splitItems[0]?.trim() ?? '');
+    const introText = !firstIsNumbered ? splitItems[0] : null;
+    const numberedItems = firstIsNumbered ? splitItems : splitItems.slice(1);
+
+    if (numberedItems.length === 0) {
+      return (
+        <div className="text-[15px] text-gray-700 font-medium leading-[1.9] whitespace-pre-wrap w-full">
+          {rawClean}
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-3 w-full">
+        {introText && (
+          <p className="text-[14px] text-gray-500 font-medium leading-[1.8] mb-1">
+            {introText.trim()}
+          </p>
+        )}
+        {numberedItems.map((item, i) => {
+          const match = item.trim().match(/^(\d+)[)\.]\s*(.*)/s);
+          if (!match) return null;
+          const num = match[1];
+          const body = match[2].trim();
+          const colonIdx = body.indexOf(':');
+          const hasTitle = colonIdx > 0 && colonIdx < 20;
+          const title = hasTitle ? body.slice(0, colonIdx).trim() : null;
+          const content = hasTitle ? body.slice(colonIdx + 1).trim() : body;
+          return (
+            <div key={i} className="bg-gray-50 rounded-2xl p-4 border border-gray-100 flex gap-3 items-start">
+              <span className="flex-shrink-0 w-7 h-7 rounded-full bg-blue-500 text-white text-xs font-black flex items-center justify-center mt-0.5">
+                {num}
+              </span>
+              <div className="flex-1 min-w-0">
+                {title && (
+                  <p className="text-[14px] font-black text-blue-700 mb-1">{title}</p>
+                )}
+                <p className="text-[14px] text-gray-700 font-medium leading-[1.8]">{content}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
   return (

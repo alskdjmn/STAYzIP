@@ -48,13 +48,22 @@ export const RoomManager: React.FC<RoomManagerProps> = ({ user, userProfile }) =
     fetchCurrentRoom();
   }, [userProfile?.roomId]);
 
-  const generateInviteCode = () => {
+  const generateSecureCode = (): string => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let code = '';
-    for (let i = 0; i < 6; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    const array = new Uint8Array(6);
+    crypto.getRandomValues(array);
+    return Array.from(array).map(v => chars[v % chars.length]).join('');
+  };
+
+  const generateUniqueInviteCode = async (): Promise<string> => {
+    const MAX_ATTEMPTS = 10;
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      const code = generateSecureCode();
+      const q = query(collection(db, 'rooms'), where('code', '==', code));
+      const snapshot = await withTimeout(getDocs(q));
+      if (snapshot.empty) return code; // 충돌 없으면 사용
     }
-    return code;
+    throw new Error('고유 초대코드 생성에 실패했습니다. 다시 시도해주세요.');
   };
 
   const handleCreateRoom = async (e: React.FormEvent) => {
@@ -65,7 +74,7 @@ export const RoomManager: React.FC<RoomManagerProps> = ({ user, userProfile }) =
     setError('');
     
     try {
-      const code = generateInviteCode();
+      const code = await generateUniqueInviteCode();
       const newRoom = {
         name: roomName,
         code,

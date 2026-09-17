@@ -15,8 +15,22 @@ export default defineConfig(({ mode }) => {
     server: {
       hmr: process.env.DISABLE_HMR !== 'true',
       allowedHosts: ['https://gen-lang-client-0005148680.web.app/'],
-
+    },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'firebase-app': ['firebase/app'],
+            'firebase-auth': ['firebase/auth'],
+            'firebase-firestore': ['firebase/firestore'],
+            'firebase-functions': ['firebase/functions'],
+            'vendor-react': ['react', 'react-dom'],
+            'vendor-motion': ['motion/react'],
+          },
+        },
+      },
     },
   };
 });
+
 
