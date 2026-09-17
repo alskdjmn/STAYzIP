@@ -107,6 +107,7 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       <AnimatePresence>
         {currentStep === 'start' && (
           <motion.div 
+            key="tutorial-start"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -179,6 +180,7 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
         {isTutorialFinished && (
           <motion.div 
+            key="tutorial-finished"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}

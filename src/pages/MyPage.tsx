@@ -62,7 +62,7 @@ export const MyPage: React.FC<MyPageProps> = ({
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-black text-gray-900 truncate">{user.displayName || '사용자'}</h1>
+            <h2 className="text-2xl font-black text-gray-900 truncate">{user.displayName || '사용자'}</h2>
             <p className="text-gray-500 truncate">{user.email}</p>
           </div>
         </div>

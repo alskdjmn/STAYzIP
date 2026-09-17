@@ -355,7 +355,6 @@ export default function App() {
     // 명시적으로 Firestore에서도 삭제하여 완전 리셋
     if (user) {
       try {
-        const { deleteDoc, doc } = await import('firebase/firestore');
         await deleteDoc(doc(db, 'users', user.uid, 'data', 'chatHistory'));
       } catch (e) {
         console.error('Failed to reset chat history in firestore', e);
@@ -390,7 +389,12 @@ export default function App() {
       case 'category':
         return <CategoryPage onSelectRule={handleSelectRule} initialCategoryId={targetCategory} />;
       case 'zip':
-        return userProfile && <ZipPage 
+        if (!userProfile) return (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+          </div>
+        );
+        return <ZipPage 
           user={user} 
           userProfile={userProfile} 
           inventoryItems={inventoryItems} 
@@ -398,7 +402,12 @@ export default function App() {
           onRemoveInventoryItem={handleRemoveInventoryItem} 
         />;
       case 'mypage':
-        return userProfile && <MyPage 
+        if (!userProfile) return (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+          </div>
+        );
+        return <MyPage 
           user={user} 
           userProfile={userProfile} 
           bookmarks={bookmarks} 
@@ -406,14 +415,13 @@ export default function App() {
           onDeleteBookmark={async (bookmark) => {
             if (!user) return;
             try {
-              const { doc, deleteDoc } = await import('firebase/firestore');
               const bookmarkRef = doc(db, 'users', user.uid, 'bookmarks', bookmark.id);
               await deleteDoc(bookmarkRef);
             } catch (e) {
               console.error('Failed to delete bookmark:', e);
             }
           }}
-          onLogout={() => { handleNavigate('home'); setUser(null); }} 
+          onLogout={() => { handleNavigate('home'); }} 
         />;
 
       case 'result':
@@ -555,7 +563,6 @@ export default function App() {
         onDeleteBookmark={async (bookmark) => {
           if (!user) return;
           try {
-            const { doc, deleteDoc } = await import('firebase/firestore');
             const bookmarkRef = doc(db, 'users', user.uid, 'bookmarks', bookmark.id);
             await deleteDoc(bookmarkRef);
           } catch (e) {

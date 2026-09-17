@@ -10,6 +10,7 @@ interface CameraModalProps {
 export const CameraModal: React.FC<CameraModalProps> = ({ onClose, onCapture }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +18,10 @@ export const CameraModal: React.FC<CameraModalProps> = ({ onClose, onCapture }) 
   useEffect(() => {
     startCamera();
     return () => {
-      stopCamera();
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
     };
   }, []);
 
@@ -26,6 +30,7 @@ export const CameraModal: React.FC<CameraModalProps> = ({ onClose, onCapture }) 
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: 'environment' } 
       });
+      streamRef.current = mediaStream;
       setStream(mediaStream);
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
@@ -37,8 +42,9 @@ export const CameraModal: React.FC<CameraModalProps> = ({ onClose, onCapture }) 
   };
 
   const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
       setStream(null);
     }
   };

@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Home, Search, HelpCircle, User, Menu, FileText, MessageSquare } from 'lucide-react';
+import { Home, Search, User, Menu, FileText } from 'lucide-react';
 import { useTutorial } from '../contexts/TutorialContext';
 
 interface LayoutProps {

@@ -106,7 +106,7 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({ onSelectRule, initia
           <div className="w-full md:w-64">
             {selectedCategoryId && (
               <SearchInput 
-                onSearch={setSearchQuery} 
+                onSearch={(query) => setSearchQuery(query)}
                 placeholder="검색..." 
                 initialValue={searchQuery}
               />

@@ -156,14 +156,14 @@ export const generateAnswer = onCall({ cors: true, region: "asia-northeast3" }, 
   const prompt = parts.join('\n\n');
 
   try {
-    const contentsParts: any[] = [prompt];
+    const parts: any[] = [{ text: prompt }];
     if (image) {
       // Parse "data:image/jpeg;base64,..."
       const commaIndex = image.indexOf(',');
       if (commaIndex !== -1) {
         const mimeType = image.substring(image.indexOf(':') + 1, image.indexOf(';'));
         const base64Data = image.substring(commaIndex + 1);
-        contentsParts.push({
+        parts.push({
           inlineData: { data: base64Data, mimeType }
         });
       }
@@ -171,7 +171,7 @@ export const generateAnswer = onCall({ cors: true, region: "asia-northeast3" }, 
 
     const response = await ai.models.generateContent({
       model: DEFAULT_MODEL,
-      contents: contentsParts,
+      contents: [{ role: 'user', parts }],
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
         responseMimeType: "application/json",

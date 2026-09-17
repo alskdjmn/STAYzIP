@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       hmr: process.env.DISABLE_HMR !== 'true',
-      allowedHosts: ['https://gen-lang-client-0005148680.web.app/'],
+      allowedHosts: ['gen-lang-client-0005148680.web.app'],
     },
     build: {
       rollupOptions: {
