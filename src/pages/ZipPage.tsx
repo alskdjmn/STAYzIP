@@ -3,10 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
-import { Package } from 'lucide-react';
+import React, { useState } from 'react';
+import { Package, Zap } from 'lucide-react';
 import { Inventory } from '../components/Inventory';
 import { RoomManager } from '../components/RoomManager';
+import { QuickAddModal } from '../components/QuickAddModal';
 import { InventoryItem, InventoryCategory, UserProfile } from '../types';
 import { User } from 'firebase/auth';
 
@@ -25,6 +26,8 @@ export const ZipPage: React.FC<ZipPageProps> = ({
   onAddInventoryItem,
   onRemoveInventoryItem
 }) => {
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+
   return (
     <div className="space-y-12">
       <div className="text-center">
@@ -43,11 +46,20 @@ export const ZipPage: React.FC<ZipPageProps> = ({
 
         {/* Inventory Section */}
         <section>
-          <div className="flex items-center space-x-2 mb-6">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Package className="h-5 w-5 text-blue-600" />
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-2">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Package className="h-5 w-5 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-black text-gray-900 tracking-tight">나의 서랍장</h3>
             </div>
-            <h3 className="text-xl font-black text-gray-900 tracking-tight">나의 서랍장</h3>
+            <button
+              onClick={() => setIsQuickAddOpen(true)}
+              className="flex items-center space-x-1.5 px-3 py-2 bg-blue-50 hover:bg-blue-100 active:scale-95 text-blue-600 rounded-xl font-bold text-sm transition-all border border-blue-100"
+            >
+              <Zap className="w-4 h-4" />
+              <span>빠른 등록</span>
+            </button>
           </div>
           <Inventory
             items={inventoryItems}
@@ -56,6 +68,13 @@ export const ZipPage: React.FC<ZipPageProps> = ({
           />
         </section>
       </div>
+
+      <QuickAddModal
+        isOpen={isQuickAddOpen}
+        onClose={() => setIsQuickAddOpen(false)}
+        onAddItem={onAddInventoryItem}
+        existingItems={inventoryItems}
+      />
     </div>
   );
 };
