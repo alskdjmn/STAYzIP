@@ -85,7 +85,12 @@ export const Inventory: React.FC<InventoryProps> = ({ items, onAddItem, onRemove
                       key={item.id}
                       className="flex flex-col items-center justify-between bg-white p-2 rounded-lg border border-gray-100 shadow-sm text-center gap-1"
                     >
-                      <span className="text-xs font-medium text-gray-700 break-all leading-tight">{item.name}</span>
+                      <span className="text-xs font-medium text-gray-700 break-all leading-tight">
+                        {item.name}
+                        {item.quantity && item.quantity > 1 && (
+                          <span className="text-blue-500 font-black"> {item.quantity}개</span>
+                        )}
+                      </span>
                       <button
                         onClick={() => onRemoveItem(item.id)}
                         className="text-gray-300 hover:text-red-500 transition-colors mt-0.5"

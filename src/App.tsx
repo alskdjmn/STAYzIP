@@ -184,7 +184,7 @@ export default function App() {
     return () => unsubscribe();
   }, [user]);
 
-  const handleAddInventoryItem = async (name: string, category: InventoryCategory) => {
+  const handleAddInventoryItem = async (name: string, category: InventoryCategory, quantity: number = 1) => {
     if (!user) return;
 
     const itemId = crypto.randomUUID();
@@ -192,6 +192,7 @@ export default function App() {
       id: itemId,
       name,
       category,
+      quantity,
       addedAt: new Date().toISOString(),
       addedBy: user.displayName || '사용자',
     };

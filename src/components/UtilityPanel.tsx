@@ -17,7 +17,7 @@ interface UtilityPanelProps {
   userProfile: UserProfile | null;
   inventoryItems: InventoryItem[];
   bookmarks: Bookmark[];
-  onAddInventoryItem: (name: string, category: InventoryCategory) => void;
+  onAddInventoryItem: (name: string, category: InventoryCategory, quantity?: number) => void;
   onRemoveInventoryItem: (id: string) => void;
   onSelectCategory: (id: string) => void;
   onSelectRule: (rule: HomeAssistRule) => void;

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Check } from 'lucide-react';
+import { X, Check, Minus, Plus } from 'lucide-react';
 import { InventoryCategory, InventoryItem } from '../types';
 
 interface QuickAddItem {
@@ -52,13 +52,14 @@ const QUICK_ADD_DATA: Record<InventoryCategory, QuickAddItem[]> = {
 interface QuickAddModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddItem: (name: string, category: InventoryCategory) => void;
+  onAddItem: (name: string, category: InventoryCategory, quantity?: number) => void;
   existingItems: InventoryItem[];
 }
 
 export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose, onAddItem, existingItems }) => {
   const [activeCategory, setActiveCategory] = useState<InventoryCategory>('냉장고');
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
 
   const categories: InventoryCategory[] = ['냉장고', '청소용품', '기타'];
   const existingNames = new Set(existingItems.map(i => i.name));
@@ -68,10 +69,26 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose, o
     const key = `${category}__${name}`;
     setSelected(prev => {
       const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
+      if (next.has(key)) {
+        next.delete(key);
+        setQuantities(q => {
+          const newQ = { ...q };
+          delete newQ[key];
+          return newQ;
+        });
+      } else {
+        next.add(key);
+        setQuantities(q => ({ ...q, [key]: 1 }));
+      }
       return next;
     });
+  };
+
+  const changeQty = (key: string, delta: number) => {
+    setQuantities(prev => ({
+      ...prev,
+      [key]: Math.max(1, Math.min(99, (prev[key] || 1) + delta))
+    }));
   };
 
   const handleConfirm = () => {
@@ -79,16 +96,20 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose, o
       const sepIdx = key.indexOf('__');
       const category = key.substring(0, sepIdx) as InventoryCategory;
       const name = key.substring(sepIdx + 2);
-      onAddItem(name, category);
+      onAddItem(name, category, quantities[key] || 1);
     });
     setSelected(new Set());
+    setQuantities({});
     onClose();
   };
 
   const handleClose = () => {
     setSelected(new Set());
+    setQuantities({});
     onClose();
   };
+
+  const totalCount = Array.from(selected).reduce((sum, key) => sum + (quantities[key] || 1), 0);
 
   return createPortal(
     <AnimatePresence>
@@ -124,9 +145,11 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose, o
               <div>
                 <h3 className="text-xl font-black text-gray-900">빠른 등록</h3>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  아이콘을 터치해 선택 후 한번에 등록하세요
+                  선택 후 <span className="font-bold">−  +</span> 로 개수를 조절하세요
                   {selected.size > 0 && (
-                    <span className="ml-1 text-blue-500 font-bold">({selected.size}개 선택됨)</span>
+                    <span className="ml-1 text-blue-500 font-bold">
+                      ({selected.size}종류 · 총 {totalCount}개)
+                    </span>
                   )}
                 </p>
               </div>
@@ -156,43 +179,83 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose, o
             </div>
 
             {/* Item Grid */}
-            <div className="overflow-y-auto flex-1 px-5 pb-2">
-              <div className="grid grid-cols-4 gap-3 pb-2">
+            <div className="overflow-y-auto flex-1 px-4 pb-2">
+              <div className="grid grid-cols-4 gap-2.5 pb-2">
                 {QUICK_ADD_DATA[activeCategory].map(item => {
                   const key = `${activeCategory}__${item.name}`;
                   const isSelected = selected.has(key);
                   const isExisting = existingNames.has(item.name);
+                  const qty = quantities[key] || 1;
 
                   return (
-                    <motion.button
+                    <motion.div
                       key={item.name}
-                      whileTap={!isExisting ? { scale: 0.85 } : {}}
-                      onClick={() => toggleItem(item.name, activeCategory)}
-                      disabled={isExisting}
-                      className={`relative flex flex-col items-center justify-center py-3 px-1 rounded-2xl border-2 transition-all ${
+                      layout
+                      className={`relative flex flex-col items-center rounded-2xl border-2 transition-all overflow-hidden ${
                         isExisting
                           ? 'bg-gray-50 border-gray-100 opacity-40 cursor-not-allowed'
                           : isSelected
                           ? 'bg-blue-50 border-blue-500 shadow-lg shadow-blue-100'
-                          : 'bg-white border-gray-100 hover:border-blue-200 hover:shadow-md'
+                          : 'bg-white border-gray-100 hover:border-blue-200 hover:shadow-md cursor-pointer'
                       }`}
                     >
-                      {(isSelected || isExisting) && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          className={`absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center ${
-                            isExisting ? 'bg-gray-400' : 'bg-blue-500'
-                          }`}
-                        >
-                          <Check className="w-3 h-3 text-white" strokeWidth={3} />
-                        </motion.div>
-                      )}
-                      <span className="text-3xl mb-1.5 leading-none">{item.emoji}</span>
-                      <span className="text-[10px] font-bold text-gray-700 text-center leading-tight break-keep">
-                        {item.name}
-                      </span>
-                    </motion.button>
+                      {/* Main tap area */}
+                      <button
+                        className="w-full flex flex-col items-center pt-3 pb-2 px-1"
+                        onClick={() => !isExisting && toggleItem(item.name, activeCategory)}
+                        disabled={isExisting}
+                      >
+                        {/* Checkmark badge */}
+                        {(isSelected || isExisting) && (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className={`absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center ${
+                              isExisting ? 'bg-gray-400' : 'bg-blue-500'
+                            }`}
+                          >
+                            <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
+                          </motion.div>
+                        )}
+                        <span className="text-3xl leading-none mb-1">{item.emoji}</span>
+                        <span className="text-[10px] font-bold text-gray-700 text-center leading-tight break-keep">
+                          {item.name}
+                        </span>
+                      </button>
+
+                      {/* Quantity stepper — 선택됐을 때만 표시 */}
+                      <AnimatePresence>
+                        {isSelected && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="w-full overflow-hidden"
+                          >
+                            <div
+                              className="flex items-center justify-between px-2 pb-2.5"
+                              onClick={e => e.stopPropagation()}
+                            >
+                              <button
+                                onClick={e => { e.stopPropagation(); changeQty(key, -1); }}
+                                className="w-5 h-5 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center flex-shrink-0 transition-colors active:scale-90"
+                              >
+                                <Minus className="w-2.5 h-2.5" strokeWidth={3} />
+                              </button>
+                              <span className="text-xs font-black text-blue-700 min-w-[1.5rem] text-center">
+                                {qty}
+                              </span>
+                              <button
+                                onClick={e => { e.stopPropagation(); changeQty(key, +1); }}
+                                className="w-5 h-5 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center flex-shrink-0 transition-colors active:scale-90"
+                              >
+                                <Plus className="w-2.5 h-2.5" strokeWidth={3} />
+                              </button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
                   );
                 })}
               </div>
@@ -210,7 +273,9 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose, o
                     : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                 }`}
               >
-                {selected.size > 0 ? `✓ ${selected.size}개 등록하기` : '아이콘을 선택해주세요'}
+                {selected.size > 0
+                  ? `✓ ${selected.size}종류 · 총 ${totalCount}개 등록하기`
+                  : '아이콘을 선택해주세요'}
               </motion.button>
             </div>
           </motion.div>

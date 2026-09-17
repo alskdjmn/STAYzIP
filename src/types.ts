@@ -64,6 +64,7 @@ export interface InventoryItem {
   id: string;
   name: string;
   category: InventoryCategory;
+  quantity?: number;
   addedAt: string;
   addedBy?: string;
 }

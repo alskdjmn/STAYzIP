@@ -15,7 +15,7 @@ interface ZipPageProps {
   user: User;
   userProfile: UserProfile | null;
   inventoryItems: InventoryItem[];
-  onAddInventoryItem: (name: string, category: InventoryCategory) => void;
+  onAddInventoryItem: (name: string, category: InventoryCategory, quantity?: number) => void;
   onRemoveInventoryItem: (id: string) => void;
 }
 
